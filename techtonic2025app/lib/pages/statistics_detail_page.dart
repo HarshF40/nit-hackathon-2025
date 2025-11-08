@@ -73,7 +73,7 @@ class _StatisticsDetailPageState extends State<StatisticsDetailPage> {
             id: 'REQ${4000 + index}',
             title: 'Completed Request ${index + 1}',
             description: 'Description for completed request ${index + 1}',
-            status: 'Completedh',
+            status: 'Complete',
             date: DateTime.now().subtract(Duration(days: index + 5)),
             location: 'Location ${index + 1}',
           ),
