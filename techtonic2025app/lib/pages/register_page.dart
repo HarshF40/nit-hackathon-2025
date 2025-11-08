@@ -67,27 +67,60 @@ class _RegisterPageState extends State<RegisterPage> {
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (BuildContext context) {
         return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_camera),
-                title: const Text('Camera'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.camera);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Gallery'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3895D3).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.photo_camera,
+                      color: Color(0xFF1261A0),
+                    ),
+                  ),
+                  title: const Text(
+                    'Camera',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3895D3).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.photo_library,
+                      color: Color(0xFF1261A0),
+                    ),
+                  ),
+                  title: const Text(
+                    'Gallery',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _pickImage(ImageSource.gallery);
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -105,7 +138,13 @@ class _RegisterPageState extends State<RegisterPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Colors.blue),
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF1261A0),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+            dialogBackgroundColor: Colors.white,
           ),
           child: child!,
         );
@@ -189,18 +228,18 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF5F9FC),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: const Color(0xFF1261A0),
+        elevation: 2,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Register',
+          'Create Account',
           style: TextStyle(
-            color: Colors.black,
+            color: Colors.white,
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -216,51 +255,102 @@ class _RegisterPageState extends State<RegisterPage> {
               children: [
                 // Profile Picture
                 Center(
-                  child: GestureDetector(
-                    onTap: _showImageSourceDialog,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey[200],
-                        border: Border.all(color: Colors.blue, width: 2),
-                      ),
-                      child: _profileImage != null
-                          ? ClipOval(
-                              child: Image.file(
-                                _profileImage!,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.add_a_photo,
-                              size: 40,
-                              color: Colors.blue,
+                  child: Stack(
+                    children: [
+                      GestureDetector(
+                        onTap: _showImageSourceDialog,
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: _profileImage == null
+                                ? const LinearGradient(
+                                    colors: [
+                                      Color(0xFF1261A0),
+                                      Color(0xFF3895D3),
+                                    ],
+                                  )
+                                : null,
+                            color: _profileImage != null ? null : null,
+                            border: Border.all(
+                              color: const Color(0xFF1261A0),
+                              width: 3,
                             ),
-                    ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF1261A0).withOpacity(0.3),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: _profileImage != null
+                              ? ClipOval(
+                                  child: Image.file(
+                                    _profileImage!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.white,
+                                ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF58CCED),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Center(
+                const SizedBox(height: 12),
+                Center(
                   child: Text(
-                    'Tap to upload profile picture',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                    'Upload Profile Picture',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),
 
                 // Name Field
-                const Text(
+                Text(
                   'Full Name *',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
                     hintText: 'Enter your full name',
-                    prefixIcon: const Icon(Icons.person, color: Colors.blue),
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    prefixIcon: const Icon(
+                      Icons.person_outline,
+                      color: Color(0xFF1261A0),
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                     border: OutlineInputBorder(
@@ -270,6 +360,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1261A0),
+                        width: 2,
+                      ),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.red),
                     ),
                   ),
                   validator: (value) {
@@ -282,9 +383,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 16),
 
                 // Aadhar Number Field
-                const Text(
+                Text(
                   'Aadhar Number *',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -293,9 +398,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   maxLength: 12,
                   decoration: InputDecoration(
                     hintText: 'Enter 12-digit Aadhar number',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
                     prefixIcon: const Icon(
                       Icons.credit_card,
-                      color: Colors.blue,
+                      color: Color(0xFF1261A0),
                     ),
                     filled: true,
                     fillColor: Colors.white,
@@ -307,6 +413,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1261A0),
+                        width: 2,
+                      ),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.red),
                     ),
                   ),
                   validator: (value) {
@@ -322,9 +439,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 16),
 
                 // Permanent Address Field
-                const Text(
+                Text(
                   'Permanent Address *',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -332,9 +453,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   maxLines: 3,
                   decoration: InputDecoration(
                     hintText: 'Enter your permanent address',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
                     prefixIcon: const Padding(
                       padding: EdgeInsets.only(bottom: 60),
-                      child: Icon(Icons.home, color: Colors.blue),
+                      child: Icon(
+                        Icons.home_outlined,
+                        color: Color(0xFF1261A0),
+                      ),
                     ),
                     filled: true,
                     fillColor: Colors.white,
@@ -345,6 +470,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1261A0),
+                        width: 2,
+                      ),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.red),
                     ),
                   ),
                   validator: (value) {
@@ -357,9 +493,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 16),
 
                 // Date of Birth Field
-                const Text(
+                Text(
                   'Date of Birth *',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -368,9 +508,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   onTap: _selectDate,
                   decoration: InputDecoration(
                     hintText: 'Select your date of birth',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
                     prefixIcon: const Icon(
                       Icons.calendar_today,
-                      color: Colors.blue,
+                      color: Color(0xFF1261A0),
                     ),
                     filled: true,
                     fillColor: Colors.white,
@@ -381,6 +522,17 @@ class _RegisterPageState extends State<RegisterPage> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1261A0),
+                        width: 2,
+                      ),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.red),
                     ),
                   ),
                   validator: (value) {
@@ -393,9 +545,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 16),
 
                 // Password Field
-                const Text(
+                Text(
                   'Password *',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -403,13 +559,17 @@ class _RegisterPageState extends State<RegisterPage> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Enter your password',
-                    prefixIcon: const Icon(Icons.lock, color: Colors.blue),
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    prefixIcon: const Icon(
+                      Icons.lock_outline,
+                      color: Color(0xFF1261A0),
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_off
                             : Icons.visibility,
-                        color: Colors.grey,
+                        color: const Color(0xFF3895D3),
                       ),
                       onPressed: () {
                         setState(() {
@@ -427,6 +587,17 @@ class _RegisterPageState extends State<RegisterPage> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1261A0),
+                        width: 2,
+                      ),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.red),
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -441,9 +612,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 16),
 
                 // Confirm Password Field
-                const Text(
+                Text(
                   'Confirm Password *',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -451,16 +626,17 @@ class _RegisterPageState extends State<RegisterPage> {
                   obscureText: _obscureConfirmPassword,
                   decoration: InputDecoration(
                     hintText: 'Confirm your password',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
                     prefixIcon: const Icon(
                       Icons.lock_outline,
-                      color: Colors.blue,
+                      color: Color(0xFF1261A0),
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword
                             ? Icons.visibility_off
                             : Icons.visibility,
-                        color: Colors.grey,
+                        color: const Color(0xFF3895D3),
                       ),
                       onPressed: () {
                         setState(() {
@@ -478,6 +654,17 @@ class _RegisterPageState extends State<RegisterPage> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF1261A0),
+                        width: 2,
+                      ),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.red),
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -489,34 +676,51 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 32),
 
                 // Register Button
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleRegistration,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1261A0), Color(0xFF3895D3)],
                     ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1261A0).withOpacity(0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleRegistration,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            'Create Account',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
                             ),
                           ),
-                        )
-                      : const Text(
-                          'Register',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -524,14 +728,18 @@ class _RegisterPageState extends State<RegisterPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Already have an account? '),
+                    Text(
+                      'Already have an account? ',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: const Text(
                         'Login',
                         style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1261A0),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
                         ),
                       ),
                     ),
