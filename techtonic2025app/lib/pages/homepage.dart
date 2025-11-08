@@ -5,13 +5,10 @@ import '../components/map_card.dart';
 import '../components/custom_bottom_nav_bar.dart';
 import 'complaindraft.dart';
 import 'socialmedia.dart';
-<<<<<<< HEAD
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../utils/user_preferences.dart';
 import '../config/env_config.dart';
-=======
->>>>>>> bee6ae0614b3938c2c57df752948a3ce2c3368c0
 import 'leaderboard.dart';
 import 'statistics_detail_page.dart';
 
@@ -125,7 +122,7 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   icon: const Icon(Icons.refresh, color: Colors.blue),
                   onPressed: () {
-                    // Handle refresh
+                    _fetchComplaintStats();
                   },
                 ),
               ],
@@ -139,11 +136,11 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const StatisticsDetailPage(
+                          builder: (context) => StatisticsDetailPage(
                             title: 'Total Requests',
-                            count: '8',
+                            count: totalRequests.toString(),
                             icon: Icons.description,
-                            backgroundColor: Color(0xFF3B9DFF),
+                            backgroundColor: const Color(0xFF3B9DFF),
                             type: 'total',
                           ),
                         ),
@@ -153,7 +150,7 @@ class _HomePageState extends State<HomePage> {
                       aspectRatio: 0.9,
                       child: StatisticsCard(
                         title: 'Total Requests',
-                        count: '8',
+                        count: _isLoadingStats ? '-' : totalRequests.toString(),
                         icon: Icons.description,
                         backgroundColor: const Color(0xFF3B9DFF),
                       ),
@@ -167,11 +164,11 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const StatisticsDetailPage(
+                          builder: (context) => StatisticsDetailPage(
                             title: 'Ongoing Requests',
-                            count: '2',
+                            count: ongoingRequests.toString(),
                             icon: Icons.access_time,
-                            backgroundColor: Color(0xFFFF9800),
+                            backgroundColor: const Color(0xFFFF9800),
                             type: 'ongoing',
                           ),
                         ),
@@ -181,7 +178,9 @@ class _HomePageState extends State<HomePage> {
                       aspectRatio: 0.9,
                       child: StatisticsCard(
                         title: 'Ongoing requests',
-                        count: '2',
+                        count: _isLoadingStats
+                            ? '-'
+                            : ongoingRequests.toString(),
                         icon: Icons.access_time,
                         backgroundColor: const Color(0xFFFF9800),
                       ),
@@ -199,11 +198,11 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const StatisticsDetailPage(
+                          builder: (context) => StatisticsDetailPage(
                             title: 'Pending Requests',
-                            count: '3',
+                            count: pendingRequests.toString(),
                             icon: Icons.hourglass_empty,
-                            backgroundColor: Color(0xFF66BB6A),
+                            backgroundColor: const Color(0xFF66BB6A),
                             type: 'pending',
                           ),
                         ),
@@ -213,7 +212,9 @@ class _HomePageState extends State<HomePage> {
                       aspectRatio: 0.9,
                       child: StatisticsCard(
                         title: 'Pending requests',
-                        count: '3',
+                        count: _isLoadingStats
+                            ? '-'
+                            : pendingRequests.toString(),
                         icon: Icons.hourglass_empty,
                         backgroundColor: const Color(0xFF66BB6A),
                       ),
@@ -227,11 +228,11 @@ class _HomePageState extends State<HomePage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const StatisticsDetailPage(
+                          builder: (context) => StatisticsDetailPage(
                             title: 'Completed Requests',
-                            count: '3',
+                            count: completedRequests.toString(),
                             icon: Icons.check_circle_outline,
-                            backgroundColor: Color(0xFFAB47BC),
+                            backgroundColor: const Color(0xFFAB47BC),
                             type: 'completed',
                           ),
                         ),
@@ -241,7 +242,9 @@ class _HomePageState extends State<HomePage> {
                       aspectRatio: 0.9,
                       child: StatisticsCard(
                         title: 'Completed requests',
-                        count: '3',
+                        count: _isLoadingStats
+                            ? '-'
+                            : completedRequests.toString(),
                         icon: Icons.check_circle_outline,
                         backgroundColor: const Color(0xFFAB47BC),
                       ),
