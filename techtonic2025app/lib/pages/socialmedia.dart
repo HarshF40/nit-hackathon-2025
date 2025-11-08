@@ -5,7 +5,7 @@ import 'create_post_screen.dart';
 import '../utils/user_preferences.dart';
 
 class SocialMediaPage extends StatefulWidget {
-  const SocialMediaPage({Key? key}) : super(key: key);
+  const SocialMediaPage({super.key});
 
   @override
   _SocialMediaPageState createState() => _SocialMediaPageState();
@@ -23,24 +23,32 @@ class _SocialMediaPageState extends State<SocialMediaPage> {
   }
 
   Future<void> _fetchPosts() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       final postsData = await PostService.getPosts();
-      setState(() {
-        _posts = postsData.map((data) => Post.fromJson(data)).toList();
-      });
+      if (mounted) {
+        setState(() {
+          _posts = postsData.map((data) => Post.fromJson(data)).toList();
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -121,15 +129,17 @@ class _SocialMediaPageState extends State<SocialMediaPage> {
                                       if (success) {
                                         await fetchComments();
                                       } else {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Failed to like comment.',
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Failed to like comment.',
+                                              ),
                                             ),
-                                          ),
-                                        );
+                                          );
+                                        }
                                       }
                                     }
                                   },
@@ -158,13 +168,15 @@ class _SocialMediaPageState extends State<SocialMediaPage> {
                                 final aadhar =
                                     await UserPreferences.getAadharNumber();
                                 if (aadhar == null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Aadhar number not found. Please login.',
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Aadhar number not found. Please login.',
+                                        ),
                                       ),
-                                    ),
-                                  );
+                                    );
+                                  }
                                   return;
                                 }
                                 final success = await PostService.createComment(
@@ -176,11 +188,13 @@ class _SocialMediaPageState extends State<SocialMediaPage> {
                                   commentController.clear();
                                   await fetchComments();
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Failed to add comment.'),
-                                    ),
-                                  );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Failed to add comment.'),
+                                      ),
+                                    );
+                                  }
                                 }
                               }
                             },
@@ -260,19 +274,6 @@ class _SocialMediaPageState extends State<SocialMediaPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('TechTonic Social'),
-        backgroundColor: Theme.of(context).primaryColor,
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchPosts),
-          IconButton(
-            icon: const Icon(Icons.sort),
-            onPressed: () {
-              // TODO: Implement sort functionality
-            },
-          ),
-        ],
-      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -310,9 +311,9 @@ class _SocialMediaPageState extends State<SocialMediaPage> {
             context,
             MaterialPageRoute(builder: (context) => const CreatePostScreen()),
           );
-          if (result == true) {
+          if (result == true && mounted) {
             // Refresh posts after successful creation
-            // TODO: Implement post refresh logic
+            _fetchPosts();
           }
         },
         child: const Icon(Icons.add),
