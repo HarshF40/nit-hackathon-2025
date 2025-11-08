@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../models/complaint_model.dart';
 
 class ComplaintInfoDialog extends StatelessWidget {
-  final ComplaintModel complaint;
+  final Map<String, dynamic> complaint;
 
   const ComplaintInfoDialog({super.key, required this.complaint});
 
   @override
   Widget build(BuildContext context) {
+    String title = complaint['title'] ?? 'No Title';
+    String category = complaint['departmentType'] ?? 'Unknown';
+    String description = complaint['description'] ?? '';
+    String latitude = complaint['location']?['latitude']?.toString() ?? '-';
+    String longitude = complaint['location']?['longitude']?.toString() ?? '-';
+    String timestamp = complaint['dateTime'] ?? '';
+    String address = complaint['address'] ?? '';
+    String status = complaint['status'] ?? '';
+    String imageUrl = complaint['imageUrl'] ?? '';
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -32,7 +40,7 @@ class ComplaintInfoDialog extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      complaint.title,
+                      title,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
@@ -69,7 +77,7 @@ class ComplaintInfoDialog extends StatelessWidget {
                         ),
                         Expanded(
                           child: Text(
-                            complaint.category,
+                            category,
                             style: const TextStyle(fontSize: 14),
                           ),
                         ),
@@ -88,7 +96,7 @@ class ComplaintInfoDialog extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Lat: ${complaint.latitude}, Long: ${complaint.longitude}',
+                            'Lat: $latitude, Long: $longitude',
                             style: const TextStyle(fontSize: 12),
                           ),
                         ),
@@ -106,10 +114,46 @@ class ComplaintInfoDialog extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          DateFormat(
-                            'MMM dd, yyyy - hh:mm a',
-                          ).format(complaint.timestamp),
+                          timestamp,
                           style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Address
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.home,
+                          color: Colors.blue[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            address,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Status
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info,
+                          color: Colors.blue[700],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Status: $status',
+                            style: const TextStyle(fontSize: 12),
+                          ),
                         ),
                       ],
                     ),
@@ -125,13 +169,13 @@ class ComplaintInfoDialog extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      complaint.description,
+                      description,
                       style: const TextStyle(fontSize: 14),
                     ),
                     const SizedBox(height: 16),
 
                     // Image if available
-                    if (complaint.image != null) ...[
+                    if (imageUrl.isNotEmpty) ...[
                       const Text(
                         'Attached Photo:',
                         style: TextStyle(
@@ -142,8 +186,8 @@ class ComplaintInfoDialog extends StatelessWidget {
                       const SizedBox(height: 8),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.file(
-                          complaint.image!,
+                        child: Image.network(
+                          imageUrl,
                           fit: BoxFit.cover,
                           width: double.infinity,
                         ),

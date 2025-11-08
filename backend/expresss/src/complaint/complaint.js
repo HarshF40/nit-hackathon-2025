@@ -301,4 +301,71 @@ router.post("/getComplaintsByAadhar", async (req, res) => {
   }
 });
 
+// Utility: Haversine distance between two geo-points (in km)
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in kilometers
+  const toRad = deg => (deg * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+// Endpoint: fetch complaints within radius
+router.post("/getComplaintsByRadius", async (req, res) => {
+  try {
+    const { latitude, longitude, radiusKm } = req.body;
+
+    console.log("Called getComplaintsByRadius")
+
+    // Validation
+    if (!latitude || !longitude || !radiusKm) {
+      return res.status(400).json({
+        error: "latitude, longitude, and radiusKm are required"
+      });
+    }
+
+    // Fetch all complaints (contains JSONB `location`)
+    const { data: complaints, error } = await supabase
+      .from("Complaint")
+      .select("*");
+
+    if (error) {
+      console.error("Fetch error:", error);
+      return res.status(500).json({ error: "Failed to fetch complaints" });
+    }
+
+    // Filter complaints by radius
+    const filtered = complaints.filter(c => {
+      if (!c.location || !c.location.latitude || !c.location.longitude) return false;
+      const dist = haversineDistance(
+        latitude,
+        longitude,
+        c.location.latitude,
+        c.location.longitude
+      );
+      return dist <= radiusKm;
+    });
+
+    // Respond with filtered results
+    res.status(200).json({
+      message: `Found ${filtered.length} complaints within ${radiusKm} km`,
+      total: filtered.length,
+      complaints: filtered
+    });
+
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router

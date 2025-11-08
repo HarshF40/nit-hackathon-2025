@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../services/location_service.dart';
-import '../components/complaint_dialog.dart';
 import '../components/complaint_info_dialog.dart';
 import '../components/radius_selector.dart';
 import '../components/geofence_circle.dart';
-import '../models/complaint_model.dart';
-import '../utils/geofence_helper.dart';
+import '../config/env_config.dart';
 
 class FullMapPage extends StatefulWidget {
   const FullMapPage({super.key});
@@ -21,7 +21,7 @@ class _FullMapPageState extends State<FullMapPage> {
   bool _isLoading = true;
   final MapController _mapController = MapController();
   double _currentZoom = 15.0;
-  final List<ComplaintModel> _complaints = [];
+  List<Map<String, dynamic>> _complaints = [];
   double _geofenceRadius = 5.0; // Default 5 km radius
   bool _showRadiusSelector = false;
 
@@ -44,6 +44,26 @@ class _FullMapPageState extends State<FullMapPage> {
             location ??
             LatLng(18.5204, 73.8567); // Default to Pune if location fails
         _isLoading = false;
+      });
+      _fetchComplaintsByRadius();
+    }
+  }
+
+  Future<void> _fetchComplaintsByRadius() async {
+    if (_currentLocation == null) return;
+    final response = await http.post(
+      Uri.parse('${EnvConfig.apiBaseUrl}/getComplaintsByRadius'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'latitude': _currentLocation!.latitude,
+        'longitude': _currentLocation!.longitude,
+        'radiusKm': _geofenceRadius,
+      }),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        _complaints = List<Map<String, dynamic>>.from(data['complaints'] ?? []);
       });
     }
   }
@@ -68,35 +88,11 @@ class _FullMapPageState extends State<FullMapPage> {
     );
   }
 
-  void _showComplaintDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => ComplaintDialog(
-        onComplaintSubmitted: (ComplaintModel complaint) {
-          setState(() {
-            _complaints.add(complaint);
-          });
-        },
-      ),
-    );
-  }
-
-  void _showComplaintInfo(ComplaintModel complaint) {
+  void _showComplaintInfoFromMap(Map<String, dynamic> complaint) {
     showDialog(
       context: context,
       builder: (BuildContext context) =>
           ComplaintInfoDialog(complaint: complaint),
-    );
-  }
-
-  List<ComplaintModel> get _filteredComplaints {
-    if (_currentLocation == null) return [];
-
-    return GeofenceHelper.filterByRadius(
-      center: _currentLocation!,
-      items: _complaints,
-      radiusKm: _geofenceRadius,
-      getLocation: (complaint) => complaint.location,
     );
   }
 
@@ -168,17 +164,30 @@ class _FullMapPageState extends State<FullMapPage> {
                           ),
                         ),
                       ),
-                    // Complaint markers (filtered by geofence)
-                    ..._filteredComplaints.map(
-                      (complaint) => Marker(
-                        point: complaint.location,
+                    // Complaint markers from backend
+                    ..._complaints.map((c) {
+                      // Decode location if it's a string
+                      final locRaw = c['location'];
+                      final loc = (locRaw is String) ? jsonDecode(locRaw) : locRaw;
+                      final latitude = double.tryParse(loc['latitude'].toString()) ?? 0.0;
+                      final longitude = double.tryParse(loc['longitude'].toString()) ?? 0.0;
+                      IconData icon = Icons.report_problem;
+                      Color color = Colors.red;
+                      switch (c['departmentType']) {
+                        case 'ELEC': icon = Icons.electric_bolt; color = Colors.yellow[700]!; break;
+                        case 'GARB': icon = Icons.delete; color = Colors.green[700]!; break;
+                        case 'ROAD': icon = Icons.traffic; color = Colors.grey[700]!; break;
+                        case 'WATER': icon = Icons.water_drop; color = Colors.blue[700]!; break;
+                      }
+                      return Marker(
+                        point: LatLng(latitude, longitude),
                         width: 40,
                         height: 40,
                         child: GestureDetector(
-                          onTap: () => _showComplaintInfo(complaint),
+                          onTap: () => _showComplaintInfoFromMap(c),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.red,
+                              color: color,
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.white, width: 3),
                               boxShadow: [
@@ -189,15 +198,11 @@ class _FullMapPageState extends State<FullMapPage> {
                                 ),
                               ],
                             ),
-                            child: const Icon(
-                              Icons.report_problem,
-                              color: Colors.white,
-                              size: 20,
-                            ),
+                            child: Icon(icon, color: Colors.white, size: 20),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    }).whereType<Marker>().toList(),
                   ],
                 ),
               ],
@@ -258,7 +263,7 @@ class _FullMapPageState extends State<FullMapPage> {
                                 ),
                               ),
                             ),
-                            if (_filteredComplaints.isNotEmpty)
+                            if (_complaints.isNotEmpty)
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -269,7 +274,7 @@ class _FullMapPageState extends State<FullMapPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  '${_filteredComplaints.length}',
+                                  '${_complaints.length}',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -371,6 +376,7 @@ class _FullMapPageState extends State<FullMapPage> {
                   setState(() {
                     _geofenceRadius = newRadius;
                   });
+                  _fetchComplaintsByRadius();
                 },
               ),
             ),
