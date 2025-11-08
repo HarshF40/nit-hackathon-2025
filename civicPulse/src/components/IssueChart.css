@@ -1,0 +1,121 @@
+.chart-section {
+  padding: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 2rem auto;
+  max-width: 1400px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.chart-type-toggle {
+  display: flex;
+  gap: 0.5rem;
+  background-color: #EEEEEE;
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  background-color: transparent;
+  color: #1C658C;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background-color: #D8D2CB;
+}
+
+.toggle-btn.active {
+  background-color: #1C658C;
+  color: white;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filter-select {
+  padding: 0.6rem 1rem;
+  border: 2px solid #D8D2CB;
+  border-radius: 6px;
+  background-color: white;
+  color: #1C658C;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-select:hover {
+  border-color: #398AB9;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #1C658C;
+}
+
+.chart-container {
+  padding: 1rem;
+  background-color: #EEEEEE;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .chart-section {
+    padding: 1rem;
+    margin: 1rem;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .chart-controls {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .chart-type-toggle,
+  .filter-controls {
+    width: 100%;
+  }
+
+  .toggle-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .filter-select {
+    flex: 1;
+  }
+
+  .chart-container {
+    padding: 0.5rem;
+  }
+}
