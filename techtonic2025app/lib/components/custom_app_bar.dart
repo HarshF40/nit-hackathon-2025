@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../pages/notification_page.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -27,7 +28,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 color: Colors.black,
               ),
               onPressed: () {
-                // Handle notification tap
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationPage(),
+                  ),
+                );
               },
             ),
             Positioned(
