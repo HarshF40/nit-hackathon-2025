@@ -1,0 +1,187 @@
+.roads-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.priority-chart-section,
+.maintenance-tracking-section {
+  background-color: #EEEEEE;
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.priority-chart-section h3,
+.maintenance-tracking-section h3 {
+  color: #1C658C;
+  font-size: 1.3rem;
+  margin: 0 0 1.5rem 0;
+  font-weight: 600;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.pie-chart-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.maintenance-type-stats {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.maintenance-type-stats h4 {
+  color: #1C658C;
+  font-size: 1.2rem;
+  margin: 0 0 1rem 0;
+}
+
+.type-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #EEEEEE;
+  border-radius: 8px;
+}
+
+.type-label {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.type-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+  color: white;
+}
+
+.type-value.emergency {
+  background-color: #FF4444;
+}
+
+.type-value.routine {
+  background-color: #398AB9;
+}
+
+.type-value.scheduled {
+  background-color: #4CAF50;
+}
+
+.maintenance-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.maintenance-table thead {
+  background-color: #1C658C;
+  color: white;
+}
+
+.maintenance-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.maintenance-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #EEEEEE;
+  color: #333;
+}
+
+.maintenance-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.critical-row {
+  background-color: #ffebee !important;
+}
+
+.priority-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+}
+
+.priority-badge.priority-low {
+  background-color: #4CAF50;
+}
+
+.priority-badge.priority-medium {
+  background-color: #FFA500;
+}
+
+.priority-badge.priority-high {
+  background-color: #FF6B6B;
+}
+
+.priority-badge.priority-critical {
+  background-color: #FF4444;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-badge.status-pending {
+  background-color: #FFA500;
+  color: white;
+}
+
+.status-badge.status-in-progress {
+  background-color: #398AB9;
+  color: white;
+}
+
+.status-badge.status-completed {
+  background-color: #4CAF50;
+  color: white;
+}
+
+@media (max-width: 968px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .maintenance-table {
+    font-size: 0.85rem;
+  }
+
+  .maintenance-table th,
+  .maintenance-table td {
+    padding: 0.7rem 0.5rem;
+  }
+
+  .type-value {
+    font-size: 1.2rem;
+  }
+}
