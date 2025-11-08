@@ -7,190 +7,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-//router.post("/createComplaint", async (req, res) => {
-//  try {
-//    const { 
-//      departmentType, 
-//      departmentId, 
-//      description, 
-//      authorAadhar, 
-//      location, 
-//      address, 
-//      imageBase64, 
-//      isCritical, 
-//      status 
-//    } = req.body;
-//
-//    // Validate required fields
-//    if (!departmentType || !description || !location || !address || isCritical === undefined || !status) {
-//      return res.status(400).json({ error: "All required fields must be provided" });
-//    }
-//
-//    // Validate status enum
-//    const validStatuses = ['COMPLETED', 'INPROGRESS', 'PENDING', 'REJECTED'];
-//    if (!validStatuses.includes(status)) {
-//      return res.status(400).json({ error: "Invalid status. Must be one of: COMPLETED, INPROGRESS, PENDING, REJECTED" });
-//    }
-//
-//    // Fetch all existing complaints
-//    const { data: existingComplaints, error: fetchError } = await supabase
-//      .from('Complaint')
-//      .select('*');
-//
-//    if (fetchError) {
-//      console.error('Fetch error:', fetchError);
-//      return res.status(500).json({ error: 'Failed to fetch existing complaints' });
-//    }
-//
-//    // Prepare text for AI duplicate detection
-//    const complaintsText = `
-//You are a complaint duplicate detection system. Analyze if the new complaint is similar to any existing complaint based on the description and location.
-//
-//EXISTING COMPLAINTS:
-//${existingComplaints.map(c => `
-//ID: ${c.id}
-//Department: ${c.departmentType} (ID: ${c.departmentId})
-//Description: ${c.description}
-//Location: ${JSON.stringify(c.location)}
-//Address: ${c.address}
-//Critical: ${c.isCritical}
-//Status: ${c.status}
-//---
-//`).join('\n')}
-//
-//NEW COMPLAINT TO CHECK:
-//Department: ${departmentType} (ID: ${departmentId})
-//Description: ${description}
-//Location: ${JSON.stringify(location)}
-//Address: ${address}
-//Critical: ${isCritical}
-//
-//INSTRUCTIONS:
-//1. Check if this new complaint describes the SAME ISSUE at a SIMILAR LOCATION as any existing complaint
-//2. Consider complaints as duplicates if they are about the same problem within a reasonable proximity (same street, same building, nearby area)
-//3. Respond ONLY in valid JSON format with NO additional text, markdown, or formatting
-//
-//RESPONSE FORMAT:
-//{
-//  "isDuplicate": true/false,
-//  "duplicateId": number or null,
-//  "reason": "brief explanation"
-//}
-//`;
-//
-//    // Send to AI for duplicate check
-//    let aiResponse;
-//    try {
-//      const aiResult = await fetch('http://10.155.92.27:5000/receive', {
-//        method: 'POST',
-//        headers: { 'Content-Type': 'application/json' },
-//        body: JSON.stringify({ query: complaintsText }),
-//      });
-//
-//      const aiData = await aiResult.json();
-//      aiResponse = aiData.response.trim();
-//      console.log('AI Raw Response:', aiResponse);
-//
-//      const cleanedResponse = aiResponse
-//        .replace(/```json\s*/gi, '')
-//        .replace(/```\s*/g, '')
-//        .trim();
-//
-//      const parsedResponse = JSON.parse(cleanedResponse);
-//      console.log('Parsed AI Response:', parsedResponse);
-//
-//      if (parsedResponse.isDuplicate && parsedResponse.duplicateId) {
-//        const duplicateId = parsedResponse.duplicateId;
-//
-//        // Fetch duplicate for verification
-//        const { data: duplicateComplaint, error: getError } = await supabase
-//          .from('Complaint')
-//          .select('*')
-//          .eq('id', duplicateId)
-//          .single();
-//
-//        if (getError) {
-//          console.error('Error fetching duplicate complaint:', getError);
-//          return res.status(500).json({ error: 'Failed to fetch duplicate complaint' });
-//        }
-//
-//        return res.status(200).json({
-//          message: 'Duplicate complaint detected.',
-//          complaint: duplicateComplaint,
-//          isDuplicate: true,
-//          reason: parsedResponse.reason,
-//        });
-//      }
-//    } catch (aiError) {
-//      console.error('AI API error:', aiError);
-//      console.log('AI check failed, continuing with new complaint creation');
-//    }
-//
-//    // No duplicate found — create new complaint
-//    let imageUrl = null;
-//
-//    // Handle image upload
-//    if (imageBase64) {
-//      try {
-//        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-//        const buffer = Buffer.from(base64Data, 'base64');
-//        const fileName = `${Date.now()}_complaint.jpg`;
-//
-//        const { error: uploadError } = await supabase.storage
-//          .from("complaint_bucket")
-//          .upload(fileName, buffer, {
-//            contentType: "image/jpeg",
-//            cacheControl: '3600',
-//          });
-//
-//        if (uploadError) {
-//          console.error("Upload error:", uploadError);
-//          return res.status(500).json({ error: "Error uploading image to Supabase" });
-//        }
-//
-//        const { data: publicUrlData } = supabase.storage
-//          .from("complaint_bucket")
-//          .getPublicUrl(fileName);
-//
-//        imageUrl = publicUrlData.publicUrl;
-//      } catch (imageError) {
-//        console.error("Image processing error:", imageError);
-//        return res.status(500).json({ error: "Error processing image" });
-//      }
-//    }
-//
-//    // Insert new complaint
-//    const { data: newComplaint, error: insertError } = await supabase
-//      .from("Complaint")
-//      .insert([{
-//        departmentType,
-//        departmentId,
-//        description,
-//        authorAadhar,
-//        location,
-//        address,
-//        imageUrl,
-//        isCritical,
-//        status,
-//      }])
-//      .select();
-//
-//    if (insertError) {
-//      console.error("Insert error:", insertError);
-//      return res.status(500).json({ error: "Error creating complaint in Supabase" });
-//    }
-//
-//    res.status(201).json({
-//      message: "New complaint created successfully",
-//      complaint: newComplaint[0],
-//      isDuplicate: false,
-//    });
-//  } catch (err) {
-//    console.error("Server error:", err);
-//    res.status(500).json({ error: "Internal server error" });
-//  }
-//});
-
 
 router.post("/createComplaint", async (req, res) => {
   try {
@@ -440,6 +256,48 @@ router.get('/allComplaints', async (req, res) => {
   } catch (error) {
     console.error('Error fetching complaints:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Fetch all complaints made by a user (Aadhar sent in request body)
+router.post("/getComplaintsByAadhar", async (req, res) => {
+  try {
+    const { aadhar } = req.body;
+
+    // Validate input
+    if (!aadhar) {
+      return res.status(400).json({ error: "Aadhar number is required in request body" });
+    }
+
+    // Fetch complaints from Supabase
+    const { data: complaints, error } = await supabase
+      .from("Complaint")
+      .select("*")
+      .eq("authorAadhar", aadhar)
+      .order("dateTime", { ascending: false }); // latest first
+
+    if (error) {
+      console.error("Fetch error:", error);
+      return res.status(500).json({ error: "Error fetching complaints from Supabase" });
+    }
+
+    // If no complaints exist
+    if (!complaints || complaints.length === 0) {
+      return res.status(200).json({
+        message: "No complaints found for this Aadhar number.",
+        complaints: [],
+      });
+    }
+
+    // Return data
+    return res.status(200).json({
+      message: "Complaints fetched successfully",
+      total: complaints.length,
+      complaints,
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

@@ -5,6 +5,10 @@ import '../components/map_card.dart';
 import '../components/custom_bottom_nav_bar.dart';
 import 'complaindraft.dart';
 import 'socialmedia.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../utils/user_preferences.dart';
+import '../config/env_config.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,6 +19,69 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+
+  int totalRequests = 0;
+  int ongoingRequests = 0;
+  int pendingRequests = 0;
+  int completedRequests = 0;
+  bool _isLoadingStats = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchComplaintStats();
+  }
+
+  Future<void> _fetchComplaintStats() async {
+    setState(() {
+      _isLoadingStats = true;
+    });
+    final aadhar = await UserPreferences.getAadharNumber();
+    if (aadhar == null) {
+      setState(() {
+        totalRequests = 0;
+        ongoingRequests = 0;
+        pendingRequests = 0;
+        completedRequests = 0;
+        _isLoadingStats = false;
+      });
+      return;
+    }
+    final response = await http.post(
+      Uri.parse('${EnvConfig.apiBaseUrl}/getComplaintsByAadhar'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'aadhar': aadhar}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final complaints = data['complaints'] ?? [];
+      int ongoing = 0, pending = 0, completed = 0;
+      for (final c in complaints) {
+        switch (c['status']) {
+          case 'ONGOING':
+            ongoing++;
+            break;
+          case 'PENDING':
+            pending++;
+            break;
+          case 'COMPLETED':
+            completed++;
+            break;
+        }
+      }
+      setState(() {
+        totalRequests = complaints.length;
+        ongoingRequests = ongoing;
+        pendingRequests = pending;
+        completedRequests = completed;
+        _isLoadingStats = false;
+      });
+    } else {
+      setState(() {
+        _isLoadingStats = false;
+      });
+    }
+  }
 
   Widget _buildHomeContent() {
     return SingleChildScrollView(
@@ -66,7 +133,7 @@ class _HomePageState extends State<HomePage> {
                     aspectRatio: 0.9,
                     child: StatisticsCard(
                       title: 'Total Requests',
-                      count: '8',
+                      count: _isLoadingStats ? '-' : totalRequests.toString(),
                       icon: Icons.description,
                       backgroundColor: const Color(0xFF3B9DFF),
                     ),
@@ -78,7 +145,7 @@ class _HomePageState extends State<HomePage> {
                     aspectRatio: 0.9,
                     child: StatisticsCard(
                       title: 'Ongoing requests',
-                      count: '2',
+                      count: _isLoadingStats ? '-' : ongoingRequests.toString(),
                       icon: Icons.access_time,
                       backgroundColor: const Color(0xFFFF9800),
                     ),
@@ -94,7 +161,7 @@ class _HomePageState extends State<HomePage> {
                     aspectRatio: 0.9,
                     child: StatisticsCard(
                       title: 'Pending requests',
-                      count: '3',
+                      count: _isLoadingStats ? '-' : pendingRequests.toString(),
                       icon: Icons.hourglass_empty,
                       backgroundColor: const Color(0xFF66BB6A),
                     ),
@@ -106,7 +173,9 @@ class _HomePageState extends State<HomePage> {
                     aspectRatio: 0.9,
                     child: StatisticsCard(
                       title: 'Completed requests',
-                      count: '3',
+                      count: _isLoadingStats
+                          ? '-'
+                          : completedRequests.toString(),
                       icon: Icons.check_circle_outline,
                       backgroundColor: const Color(0xFFAB47BC),
                     ),
