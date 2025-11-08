@@ -1,0 +1,92 @@
+.map-section {
+  padding: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 2rem auto;
+  max-width: 1400px;
+}
+
+.section-title {
+  color: #1C658C;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.map-container {
+  height: 500px;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #D8D2CB;
+}
+
+.popup-content h3 {
+  color: #1C658C;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.popup-content p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.map-legend {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #EEEEEE;
+  border-radius: 8px;
+}
+
+.map-legend h3 {
+  color: #1C658C;
+  font-size: 1.2rem;
+  margin: 0 0 1rem 0;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #333;
+}
+
+.legend-label {
+  font-size: 0.95rem;
+  color: #333;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .map-section {
+    padding: 1rem;
+    margin: 1rem;
+  }
+
+  .section-title {
+    font-size: 1.4rem;
+  }
+
+  .map-container {
+    height: 400px;
+  }
+
+  .legend-items {
+    gap: 1rem;
+  }
+}
