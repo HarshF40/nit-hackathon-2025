@@ -113,10 +113,7 @@ class ComplaintInfoDialog extends StatelessWidget {
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          timestamp,
-                          style: const TextStyle(fontSize: 12),
-                        ),
+                        Text(timestamp, style: const TextStyle(fontSize: 12)),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -124,11 +121,7 @@ class ComplaintInfoDialog extends StatelessWidget {
                     // Address
                     Row(
                       children: [
-                        Icon(
-                          Icons.home,
-                          color: Colors.blue[700],
-                          size: 20,
-                        ),
+                        Icon(Icons.home, color: Colors.blue[700], size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -143,11 +136,7 @@ class ComplaintInfoDialog extends StatelessWidget {
                     // Status
                     Row(
                       children: [
-                        Icon(
-                          Icons.info,
-                          color: Colors.blue[700],
-                          size: 20,
-                        ),
+                        Icon(Icons.info, color: Colors.blue[700], size: 20),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -168,10 +157,7 @@ class ComplaintInfoDialog extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      description,
-                      style: const TextStyle(fontSize: 14),
-                    ),
+                    Text(description, style: const TextStyle(fontSize: 14)),
                     const SizedBox(height: 16),
 
                     // Image if available

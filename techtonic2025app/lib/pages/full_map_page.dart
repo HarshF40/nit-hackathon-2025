@@ -165,44 +165,72 @@ class _FullMapPageState extends State<FullMapPage> {
                         ),
                       ),
                     // Complaint markers from backend
-                    ..._complaints.map((c) {
-                      // Decode location if it's a string
-                      final locRaw = c['location'];
-                      final loc = (locRaw is String) ? jsonDecode(locRaw) : locRaw;
-                      final latitude = double.tryParse(loc['latitude'].toString()) ?? 0.0;
-                      final longitude = double.tryParse(loc['longitude'].toString()) ?? 0.0;
-                      IconData icon = Icons.report_problem;
-                      Color color = Colors.red;
-                      switch (c['departmentType']) {
-                        case 'ELEC': icon = Icons.electric_bolt; color = Colors.yellow[700]!; break;
-                        case 'GARB': icon = Icons.delete; color = Colors.green[700]!; break;
-                        case 'ROAD': icon = Icons.traffic; color = Colors.grey[700]!; break;
-                        case 'WATER': icon = Icons.water_drop; color = Colors.blue[700]!; break;
-                      }
-                      return Marker(
-                        point: LatLng(latitude, longitude),
-                        width: 40,
-                        height: 40,
-                        child: GestureDetector(
-                          onTap: () => _showComplaintInfoFromMap(c),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 6,
-                                  spreadRadius: 1,
+                    ..._complaints
+                        .map((c) {
+                          // Decode location if it's a string
+                          final locRaw = c['location'];
+                          final loc = (locRaw is String)
+                              ? jsonDecode(locRaw)
+                              : locRaw;
+                          final latitude =
+                              double.tryParse(loc['latitude'].toString()) ??
+                              0.0;
+                          final longitude =
+                              double.tryParse(loc['longitude'].toString()) ??
+                              0.0;
+                          IconData icon = Icons.report_problem;
+                          Color color = Colors.red;
+                          switch (c['departmentType']) {
+                            case 'ELEC':
+                              icon = Icons.electric_bolt;
+                              color = Colors.yellow[700]!;
+                              break;
+                            case 'GARB':
+                              icon = Icons.delete;
+                              color = Colors.green[700]!;
+                              break;
+                            case 'ROAD':
+                              icon = Icons.traffic;
+                              color = Colors.grey[700]!;
+                              break;
+                            case 'WATER':
+                              icon = Icons.water_drop;
+                              color = Colors.blue[700]!;
+                              break;
+                          }
+                          return Marker(
+                            point: LatLng(latitude, longitude),
+                            width: 40,
+                            height: 40,
+                            child: GestureDetector(
+                              onTap: () => _showComplaintInfoFromMap(c),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 3,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      blurRadius: 6,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
                                 ),
-                              ],
+                                child: Icon(
+                                  icon,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
                             ),
-                            child: Icon(icon, color: Colors.white, size: 20),
-                          ),
-                        ),
-                      );
-                    }).whereType<Marker>().toList(),
+                          );
+                        })
+                        .whereType<Marker>()
+                        .toList(),
                   ],
                 ),
               ],
