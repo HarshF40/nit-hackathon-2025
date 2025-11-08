@@ -401,17 +401,6 @@ class _FullMapPageState extends State<FullMapPage> {
               ),
             ),
           ),
-
-          // Floating Action Button (Add Complaint)
-          Positioned(
-            right: 16,
-            bottom: 32,
-            child: FloatingActionButton(
-              onPressed: _showComplaintDialog,
-              backgroundColor: Colors.blue,
-              child: const Icon(Icons.add, color: Colors.white, size: 32),
-            ),
-          ),
         ],
       ),
     );
