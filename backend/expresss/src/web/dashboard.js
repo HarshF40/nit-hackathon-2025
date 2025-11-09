@@ -44,44 +44,77 @@ router.post("/getDepartmentId", async (req, res) => {
   }
 });
 
+//router.post("/getComplaintsByDepartment", async (req, res) => {
+//  try {
+//    const { departmentId } = req.body;
+//
+//    // Validate departmentId
+//    if (!departmentId) {
+//      return res.status(400).json({ error: "Department ID is required" });
+//    }
+//
+//    // Fetch complaints by department ID with poster details
+//    const { data: complaints, error: fetchError } = await supabase
+//      .from("Complaint")
+//      .select(`
+//        *,
+//        User:posterId (
+//          id,
+//          name,
+//          aadharNumber,
+//          profile_pic
+//        ),
+//        Department:departmentId (
+//          id,
+//          name,
+//          type
+//        )
+//      `)
+//      .eq("departmentId", departmentId)
+//      .order('dateTime', { ascending: false }); // Latest complaints first
+//
+//    if (fetchError) {
+//      console.error("Fetch error:", fetchError);
+//      return res.status(500).json({ error: "Error fetching complaints from database" });
+//    }
+//
+//    res.status(200).json({
+//      success: true,
+//      count: complaints.length,
+//      complaints: complaints,
+//    });
+//  } catch (err) {
+//    console.error("Server error:", err);
+//    res.status(500).json({ error: "Internal server error" });
+//  }
+//});
+
 router.post("/getComplaintsByDepartment", async (req, res) => {
+  console.log("Called get complaints by id")
   try {
     const { departmentId } = req.body;
 
-    // Validate departmentId
+    // Validate input
     if (!departmentId) {
-      return res.status(400).json({ error: "Department ID is required" });
+      return res.status(400).json({ error: "departmentId is required" });
     }
 
-    // Fetch complaints by department ID with poster details
-    const { data: complaints, error: fetchError } = await supabase
+    // Fetch complaints for this department
+    const { data: complaints, error } = await supabase
       .from("Complaint")
-      .select(`
-        *,
-        User:posterId (
-          id,
-          name,
-          aadharNumber,
-          profile_pic
-        ),
-        Department:departmentId (
-          id,
-          name,
-          type
-        )
-      `)
+      .select("*")
       .eq("departmentId", departmentId)
-      .order('dateTime', { ascending: false }); // Latest complaints first
+      .order("dateTime", { ascending: false }); // Latest first
 
-    if (fetchError) {
-      console.error("Fetch error:", fetchError);
-      return res.status(500).json({ error: "Error fetching complaints from database" });
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      return res.status(500).json({ error: "Error fetching complaints" });
     }
 
     res.status(200).json({
       success: true,
-      count: complaints.length,
-      complaints: complaints,
+      message: "Complaints fetched successfully",
+      complaints: complaints || [],
     });
   } catch (err) {
     console.error("Server error:", err);
