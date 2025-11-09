@@ -115,7 +115,12 @@ class _StatisticsDetailPageState extends State<StatisticsDetailPage> {
       case 'total':
         return items;
       case 'ongoing':
-        return items.where((item) => item.status == 'ONGOING').toList();
+        // Accept both 'ONGOING' and 'INPROGRESS' statuses
+        return items
+            .where(
+              (item) => item.status == 'ONGOING' || item.status == 'INPROGRESS',
+            )
+            .toList();
       case 'pending':
         return items.where((item) => item.status == 'PENDING').toList();
       case 'completed':
@@ -135,6 +140,7 @@ class _StatisticsDetailPageState extends State<StatisticsDetailPage> {
       case 'COMPLETED':
         return const Color(0xFFAB47BC);
       case 'ONGOING':
+      case 'INPROGRESS':
         return const Color(0xFFFF9800);
       case 'PENDING':
         return const Color(0xFF66BB6A);

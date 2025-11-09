@@ -61,6 +61,7 @@ class _HomePageState extends State<HomePage> {
       for (final c in complaints) {
         switch (c['status']) {
           case 'ONGOING':
+          case 'INPROGRESS':
             ongoing++;
             break;
           case 'PENDING':
