@@ -52,13 +52,22 @@ const DepartmentDashboard = ({
         setLoading(true);
         setError(null);
 
-        // Get department ID using the department name
-        const deptIdResponse = await getDepartmentId(departmentName);
-        const departmentId = deptIdResponse.departmentId;
-        console.log('✅ Department ID:', departmentId);
+        // Get department ID from localStorage (stored during login)
+        let departmentId = localStorage.getItem('departmentId');
+        
+        // If departmentId is not in localStorage, fetch it using department name
+        if (!departmentId) {
+          console.log('⚠️ Department ID not found in localStorage, fetching...');
+          const deptIdResponse = await getDepartmentId(departmentName);
+          departmentId = deptIdResponse.departmentId;
+          localStorage.setItem('departmentId', departmentId.toString());
+          console.log('✅ Department ID fetched and stored:', departmentId);
+        } else {
+          console.log('✅ Using stored Department ID:', departmentId);
+        }
 
         // Get complaints for this department
-        const complaintsResponse = await getComplaintsByDepartment(departmentId);
+        const complaintsResponse = await getComplaintsByDepartment(parseInt(departmentId));
         const complaints = complaintsResponse.complaints;
         console.log('✅ Received complaints:', complaints.length, 'complaints');
         console.log('📍 First complaint data:', complaints[0]);
@@ -70,12 +79,27 @@ const DepartmentDashboard = ({
         
         // Log status breakdown for debugging
         const statusBreakdown = {};
+        const priorityBreakdown = {};
         const complaintsWithImages = transformedComplaints.filter(c => c.image).length;
+        
         transformedComplaints.forEach(c => {
           statusBreakdown[c.status] = (statusBreakdown[c.status] || 0) + 1;
+          priorityBreakdown[c.priority] = (priorityBreakdown[c.priority] || 0) + 1;
         });
+        
         console.log('📊 Status breakdown:', statusBreakdown);
+        console.log('🎯 Priority breakdown:', priorityBreakdown);
         console.log('🖼️ Complaints with images:', complaintsWithImages, '/', transformedComplaints.length);
+        
+        // Calculate and log statistics
+        const calculatedStats = getStatistics(transformedComplaints);
+        console.log('📈 Calculated Dashboard Statistics:');
+        console.log('   - Current Issues:', calculatedStats.current);
+        console.log('   - Ongoing Issues:', calculatedStats.pending);
+        console.log('   - Resolved Issues:', calculatedStats.resolved);
+        console.log('   - Critical Issues:', calculatedStats.critical);
+        console.log('   - Rejected Issues:', calculatedStats.rejected);
+        console.log('   - Total Complaints:', transformedComplaints.length);
         
         setIssuesData(transformedComplaints);
 
@@ -207,7 +231,7 @@ const DepartmentDashboard = ({
       status: 'current',
     },
     {
-      title: 'Pending Issues',
+      title: 'Ongoing Issues',
       count: stats.pending,
       icon: <FaHourglassHalf size={35} />,
       color: '#FFA500',
@@ -481,7 +505,7 @@ const DepartmentDashboard = ({
                       dataKey="pending"
                       stroke="#FFA500"
                       strokeWidth={2}
-                      name="Pending"
+                      name="Ongoing"
                       dot={{ fill: '#FFA500', r: 4 }}
                     />
                     <Line
@@ -511,7 +535,7 @@ const DepartmentDashboard = ({
                   </>
                 ) : (
                   <>
-                    <Bar dataKey="pending" fill="#FFA500" name="Pending" />
+                    <Bar dataKey="pending" fill="#FFA500" name="Ongoing" />
                     <Bar dataKey="in-progress" fill="#398AB9" name="In Progress" />
                     <Bar dataKey="resolved" fill="#4CAF50" name="Resolved" />
                     <Bar dataKey="critical" fill="#FF4444" name="Critical" />

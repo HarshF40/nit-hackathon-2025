@@ -1,13 +1,92 @@
+/* Modern Glassmorphism Theme Variables */
+:root {
+  /* Base Colors - Blue-tinted palette matching Registration */
+  --color-ash-gray: #d8e2dc;
+  --color-cambridge-blue: #9db4c0;
+  --color-hookers-green: #6b9aaa;
+  --color-dark-slate: #5a99b8;
+  --color-charcoal: #4a7c99;
+  
+  /* Glassmorphism Glass */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-strong: rgba(255, 255, 255, 0.15);
+  --glass-bg-card: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+  --glass-shadow-hover: 0 12px 40px rgba(31, 38, 135, 0.2);
+  
+  /* Text Colors */
+  --text-primary: #2d4a5a;
+  --text-secondary: #5a7a8a;
+  --text-light: #8a9ba5;
+  --text-white: #ffffff;
+  
+  /* Accent Colors */
+  --accent-blue: #5a99b8;
+  --accent-green: #6b9aaa;
+  --accent-success: #4CAF50;
+  --accent-warning: #FFA500;
+  --accent-danger: #FF4444;
+  --accent-info: #398AB9;
+  
+  /* Gradients */
+  --gradient-bg: linear-gradient(135deg, 
+    rgba(216,226,220,0.3) 0%, 
+    rgba(157,180,192,0.2) 50%, 
+    rgba(107,154,170,0.3) 100%);
+  --gradient-card: linear-gradient(135deg, 
+    rgba(255,255,255,0.9) 0%, 
+    rgba(255,255,255,0.85) 100%);
+  
+  /* Spacing */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+
 .app {
   min-height: 100vh;
-  background-color: #EEEEEE;
+  background: linear-gradient(135deg, 
+    #e8f0f2 0%, 
+    #d1e3e8 25%, 
+    #c5d9e0 50%, 
+    #b8d0d9 75%, 
+    #aac6d0 100%);
+  background-attachment: fixed;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* Animated background pattern */
+.app::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(157,180,192,0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(107,154,170,0.1) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(216,226,220,0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .main-content {
   flex: 1;
   padding: 1rem 0;
+  position: relative;
+  z-index: 1;
 }
 
 /* Smooth scrolling */
@@ -15,22 +94,24 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar */
+/* Modern Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #EEEEEE;
+  background: rgba(216,226,220,0.3);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #398AB9;
-  border-radius: 5px;
+  background: linear-gradient(180deg, var(--accent-blue), var(--accent-green));
+  border-radius: 10px;
+  border: 2px solid rgba(216,226,220,0.3);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #1C658C;
+  background: linear-gradient(180deg, var(--color-charcoal), var(--accent-blue));
 }
 
 /* Leaflet popup custom styling */
@@ -44,7 +125,7 @@ html {
   font-family: inherit;
 }
 
-/* Animations */
+/* Modern Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -56,16 +137,65 @@ html {
   }
 }
 
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 .map-section,
 .status-cards-section,
 .chart-section,
 .analytics-section {
-  animation: fadeIn 0.6s ease-out;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Global Glass Card Style */
+.glass-card {
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Responsive utilities */
 @media (max-width: 1024px) {
   .main-content {
     padding: 0.5rem 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

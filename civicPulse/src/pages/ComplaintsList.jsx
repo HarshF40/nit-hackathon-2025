@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaArrowLeft, FaMapMarkerAlt, FaClock, FaExclamationCircle, FaCheckCircle, FaUser, FaCalendar, FaFilter, FaTimes } from 'react-icons/fa';
+import { FaArrowLeft, FaMapMarkerAlt, FaClock, FaExclamationCircle, FaCheckCircle, FaUser, FaCalendar, FaFilter, FaTimes, FaPlay, FaUpload, FaImage } from 'react-icons/fa';
 import Navbar from '../components/Navbar';
-import { updateComplaintStatus } from '../services/api';
+import { updateComplaintStatus, startComplaint, updateComplaintProgress, uploadProgressImage } from '../services/api';
 import './ComplaintsList.css';
 
 const ComplaintsList = () => {
@@ -24,8 +24,137 @@ const ComplaintsList = () => {
   const [sortBy, setSortBy] = useState('date');
   const [localComplaints, setLocalComplaints] = useState(complaints);
   const [updatingIds, setUpdatingIds] = useState(new Set());
+  const [selectedTeams, setSelectedTeams] = useState({}); // Track selected team for each complaint
+  const [expandedCards, setExpandedCards] = useState(new Set()); // Track expanded ongoing cards
+  const [progressUpdates, setProgressUpdates] = useState({}); // Track progress for each complaint
+  const [uploadingImages, setUploadingImages] = useState({}); // Track image uploads
+  
+  // Get available teams from localStorage
+  const getAvailableTeams = () => {
+    const allTeams = localStorage.getItem('allTeams');
+    const currentDepartment = localStorage.getItem('authType') || 'ELEC';
+    if (allTeams) {
+      const teams = JSON.parse(allTeams);
+      return teams.filter(team => team.department === currentDepartment);
+    }
+    return [];
+  };
 
-  // Handle status change
+  // Handle starting a complaint (assign team and move to ongoing)
+  const handleStartComplaint = async (complaintId) => {
+    const selectedTeam = selectedTeams[complaintId];
+    if (!selectedTeam) {
+      alert('Please select a team to assign this complaint');
+      return;
+    }
+
+    try {
+      setUpdatingIds(prev => new Set([...prev, complaintId]));
+      
+      // Call API to start complaint
+      await startComplaint(complaintId, selectedTeam);
+      
+      // Update local state
+      const updatedComplaints = localComplaints.map(c => 
+        c.id === complaintId ? { 
+          ...c, 
+          status: 'in-progress',
+          assignedTeam: selectedTeam,
+          progress: 0
+        } : c
+      );
+      setLocalComplaints(updatedComplaints);
+      
+      // Initialize progress for this complaint
+      setProgressUpdates(prev => ({
+        ...prev,
+        [complaintId]: { progress: 0, images: [] }
+      }));
+      
+      // Expand the card to show progress
+      setExpandedCards(prev => new Set([...prev, complaintId]));
+      
+      setUpdatingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(complaintId);
+        return newSet;
+      });
+      
+      console.log('✅ Complaint started with team:', selectedTeam);
+    } catch (error) {
+      console.error('❌ Failed to start complaint:', error);
+      alert('Failed to start complaint. Please try again.');
+      setUpdatingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(complaintId);
+        return newSet;
+      });
+    }
+  };
+
+  // Handle progress update
+  const handleProgressUpdate = async (complaintId, newProgress) => {
+    try {
+      await updateComplaintProgress(complaintId, newProgress);
+      
+      // Update local state
+      setProgressUpdates(prev => ({
+        ...prev,
+        [complaintId]: {
+          ...prev[complaintId],
+          progress: newProgress
+        }
+      }));
+      
+      // If 100%, mark as resolved
+      if (newProgress === 100) {
+        const updatedComplaints = localComplaints.map(c => 
+          c.id === complaintId ? { ...c, status: 'resolved' } : c
+        );
+        setLocalComplaints(updatedComplaints);
+        setExpandedCards(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(complaintId);
+          return newSet;
+        });
+      }
+      
+      console.log('✅ Progress updated:', complaintId, newProgress);
+    } catch (error) {
+      console.error('❌ Failed to update progress:', error);
+      alert('Failed to update progress. Please try again.');
+    }
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (complaintId, file) => {
+    if (!file) return;
+    
+    try {
+      setUploadingImages(prev => ({ ...prev, [complaintId]: true }));
+      
+      const imageUrl = await uploadProgressImage(complaintId, file);
+      
+      // Update local progress state with new image
+      setProgressUpdates(prev => ({
+        ...prev,
+        [complaintId]: {
+          ...prev[complaintId],
+          images: [...(prev[complaintId]?.images || []), imageUrl]
+        }
+      }));
+      
+      setUploadingImages(prev => ({ ...prev, [complaintId]: false }));
+      
+      console.log('✅ Image uploaded:', imageUrl);
+    } catch (error) {
+      console.error('❌ Failed to upload image:', error);
+      alert('Failed to upload image. Please try again.');
+      setUploadingImages(prev => ({ ...prev, [complaintId]: false }));
+    }
+  };
+
+  // Handle status change (for resolved)
   const handleStatusChange = async (complaintId, currentStatus) => {
     // Don't allow changing if already resolved
     if (currentStatus === 'resolved' || currentStatus === 'closed' || currentStatus === 'completed') {
@@ -68,13 +197,18 @@ const ComplaintsList = () => {
 
     // Filter by status
     if (status !== 'all') {
-      if (status === 'current' || status === 'pending') {
-        // Both Current and Pending show the same data - all non-resolved complaints
+      if (status === 'current') {
+        // Current = NEW complaints that need to be started (status = pending)
         filtered = filtered.filter(c => 
-          c.status === 'in-progress' || c.status === 'current' || c.status === 'active' ||
           c.status === 'pending' || c.status === 'open' || c.status === 'new'
         );
-        console.log('🔍 Filtering for CURRENT/PENDING issues:', filtered.length, 'found');
+        console.log('🔍 Filtering for CURRENT issues (pending):', filtered.length, 'found');
+      } else if (status === 'pending') {
+        // Pending/Ongoing = Complaints that have been STARTED (status = in-progress)
+        filtered = filtered.filter(c => 
+          c.status === 'in-progress' || c.status === 'active' || c.status === 'current'
+        );
+        console.log('🔍 Filtering for ONGOING issues (in-progress):', filtered.length, 'found');
       } else if (status === 'resolved') {
         filtered = filtered.filter(c => 
           c.status === 'resolved' || c.status === 'closed' || c.status === 'completed'
@@ -161,7 +295,9 @@ const ComplaintsList = () => {
 
   const getStatusTitle = () => {
     if (status === 'current') return 'Current Issues';
-    if (status === 'pending') return 'Pending Issues';
+    if (status === 'pending') return 'Ongoing Issues';
+    if (status === 'ongoing') return 'Ongoing Issues';
+    if (status === 'in-progress') return 'Ongoing Issues';
     if (status === 'resolved') return 'Resolved Issues';
     if (status === 'critical') return 'Critical Issues';
     if (status === 'rejected') return 'Rejected Issues';
@@ -256,20 +392,146 @@ const ComplaintsList = () => {
                 </div>
 
                 <div className="complaint-body">
-                  {/* Resolve Checkbox */}
-                  {(complaint.status !== 'resolved' && complaint.status !== 'closed' && complaint.status !== 'completed') && (
-                    <div className="resolve-checkbox-container">
-                      <label className="resolve-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          onChange={() => handleStatusChange(complaint.id, complaint.status)}
-                          disabled={updatingIds.has(complaint.id)}
-                        />
-                        <span className="checkbox-label">
-                          {updatingIds.has(complaint.id) ? 'Updating...' : 'Mark as Resolved'}
+                  {/* Start Complaint with Team Selection (ONLY for pending complaints) */}
+                  {complaint.status === 'pending' && (
+                    <div className="start-complaint-container">
+                      <div className="team-selection-group">
+                        <label htmlFor={`team-${complaint.id}`}>Assign Team:</label>
+                        <select
+                          id={`team-${complaint.id}`}
+                          className="team-dropdown"
+                          value={selectedTeams[complaint.id] || ''}
+                          onChange={(e) => setSelectedTeams(prev => ({
+                            ...prev,
+                            [complaint.id]: e.target.value
+                          }))}
+                        >
+                          <option value="">Select a team...</option>
+                          {getAvailableTeams().map(team => (
+                            <option key={team.id} value={team.name}>
+                              {team.name} ({team.members.length} members)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button 
+                        className="start-button"
+                        onClick={() => handleStartComplaint(complaint.id)}
+                        disabled={!selectedTeams[complaint.id] || updatingIds.has(complaint.id)}
+                      >
+                        <FaPlay /> {updatingIds.has(complaint.id) ? 'Starting...' : 'Start'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Progress Tracking (ONLY for in-progress/ongoing complaints) */}
+                  {complaint.status === 'in-progress' && (
+                    <div className="ongoing-complaint-section">
+                      <div className="ongoing-header">
+                        <span className="assigned-team">
+                          <FaUser /> Assigned to: <strong>{complaint.assignedTeam || selectedTeams[complaint.id] || 'Team'}</strong>
                         </span>
-                      </label>
+                        <button 
+                          className="toggle-progress-btn"
+                          onClick={() => {
+                            setExpandedCards(prev => {
+                              const newSet = new Set(prev);
+                              if (newSet.has(complaint.id)) {
+                                newSet.delete(complaint.id);
+                              } else {
+                                newSet.add(complaint.id);
+                              }
+                              return newSet;
+                            });
+                          }}
+                        >
+                          {expandedCards.has(complaint.id) ? 'Hide Progress' : 'Show Progress'}
+                        </button>
+                      </div>
+
+                      {expandedCards.has(complaint.id) && (
+                        <div className="progress-section">
+                          <h4>Work Progress</h4>
+                          
+                          {/* Progress Bar */}
+                          <div className="progress-bar-container">
+                            <div className="progress-bar-track">
+                              <div 
+                                className="progress-bar-fill"
+                                style={{ width: `${progressUpdates[complaint.id]?.progress || 0}%` }}
+                              ></div>
+                            </div>
+                            <div className="progress-percentage">
+                              {progressUpdates[complaint.id]?.progress || 0}%
+                            </div>
+                          </div>
+
+                          {/* Progress Buttons */}
+                          <div className="progress-buttons">
+                            <button 
+                              className={`progress-btn ${(progressUpdates[complaint.id]?.progress || 0) >= 25 ? 'active' : ''}`}
+                              onClick={() => handleProgressUpdate(complaint.id, 25)}
+                              disabled={(progressUpdates[complaint.id]?.progress || 0) >= 25}
+                            >
+                              25%
+                            </button>
+                            <button 
+                              className={`progress-btn ${(progressUpdates[complaint.id]?.progress || 0) >= 50 ? 'active' : ''}`}
+                              onClick={() => handleProgressUpdate(complaint.id, 50)}
+                              disabled={(progressUpdates[complaint.id]?.progress || 0) >= 50}
+                            >
+                              50%
+                            </button>
+                            <button 
+                              className={`progress-btn ${(progressUpdates[complaint.id]?.progress || 0) >= 75 ? 'active' : ''}`}
+                              onClick={() => handleProgressUpdate(complaint.id, 75)}
+                              disabled={(progressUpdates[complaint.id]?.progress || 0) >= 75}
+                            >
+                              75%
+                            </button>
+                            <button 
+                              className={`progress-btn ${(progressUpdates[complaint.id]?.progress || 0) >= 100 ? 'active' : ''}`}
+                              onClick={() => handleProgressUpdate(complaint.id, 100)}
+                              disabled={(progressUpdates[complaint.id]?.progress || 0) >= 100}
+                            >
+                              100%
+                            </button>
+                          </div>
+
+                          {/* Image Upload */}
+                          <div className="image-upload-section">
+                            <label className="upload-label">
+                              <FaImage /> Upload Progress Photo
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  handleImageUpload(complaint.id, e.target.files[0]);
+                                }
+                              }}
+                              className="file-input"
+                              disabled={uploadingImages[complaint.id]}
+                            />
+                            {uploadingImages[complaint.id] && (
+                              <span className="uploading-text">Uploading...</span>
+                            )}
+                          </div>
+
+                          {/* Uploaded Images */}
+                          {progressUpdates[complaint.id]?.images?.length > 0 && (
+                            <div className="uploaded-images">
+                              <h5>Progress Photos:</h5>
+                              <div className="images-grid">
+                                {progressUpdates[complaint.id].images.map((img, idx) => (
+                                  <img key={idx} src={img} alt={`Progress ${idx + 1}`} className="progress-image" />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                   
