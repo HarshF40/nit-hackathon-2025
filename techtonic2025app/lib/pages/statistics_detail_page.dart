@@ -76,6 +76,7 @@ class _StatisticsDetailPageState extends State<StatisticsDetailPage> {
                   ? DateTime.parse(complaint['createdAt'])
                   : DateTime.now(),
               location: complaint['address'] ?? 'Unknown location',
+              downvotes: complaint['downvotes'] ?? 0,
             ),
           );
         }
@@ -162,6 +163,102 @@ class _StatisticsDetailPageState extends State<StatisticsDetailPage> {
       default:
         return 'No data available';
     }
+  }
+
+  Future<void> _downvoteComplaint(
+    String complaintId,
+    int currentDownvotes,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${EnvConfig.apiBaseUrl}/downvoteComplaint'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'complaintId': int.parse(complaintId)}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final newDownvoteCount =
+            data['newDownvoteCount'] ?? currentDownvotes + 1;
+
+        // Update local state
+        setState(() {
+          final index = _filteredRequests.indexWhere(
+            (c) => c.id == complaintId,
+          );
+          if (index != -1) {
+            final item = _filteredRequests[index];
+            _filteredRequests[index] = RequestItem(
+              id: item.id,
+              title: item.title,
+              description: item.description,
+              status: item.status,
+              date: item.date,
+              location: item.location,
+              downvotes: newDownvoteCount,
+            );
+          }
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Complaint downvoted successfully'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to downvote: ${response.statusCode}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error downvoting complaint: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showDownvoteConfirmation(RequestItem item) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Downvote Complaint'),
+          content: Text(
+            widget.type == 'completed'
+                ? 'Are you sure you want to downvote this completed complaint? This will signal that the resolution was not satisfactory.'
+                : 'Are you sure you want to downvote this complaint?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _downvoteComplaint(item.id, item.downvotes);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Downvote'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -343,24 +440,66 @@ class _StatisticsDetailPageState extends State<StatisticsDetailPage> {
                         ),
                       ),
                     ),
-                    // Status Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(item.status).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        item.status,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _getStatusColor(item.status),
+                    Row(
+                      children: [
+                        // Status Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(
+                              item.status,
+                            ).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            item.status,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: _getStatusColor(item.status),
+                            ),
+                          ),
                         ),
-                      ),
+                        // Downvote Button (show for completed items)
+                        if (widget.type == 'completed') ...[
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: () => _showDownvoteConfirmation(item),
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.thumb_down,
+                                    size: 14,
+                                    color: Colors.red,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${item.downvotes}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
@@ -443,6 +582,7 @@ class RequestItem {
   final String status;
   final DateTime date;
   final String location;
+  final int downvotes;
 
   RequestItem({
     required this.id,
@@ -451,5 +591,6 @@ class RequestItem {
     required this.status,
     required this.date,
     required this.location,
+    required this.downvotes,
   });
 }
