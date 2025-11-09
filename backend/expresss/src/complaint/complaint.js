@@ -8,12 +8,196 @@ const supabase = createClient(
 );
 
 
+//router.post("/createComplaint", async (req, res) => {
+//  try {
+//    const {
+//      departmentType, // enum: 'ELEC', 'WATER', 'GARB', 'ROAD'
+//      departmentId,
+//      title,          // additional field, not stored but can be logged
+//      description,
+//      authorAadhar,
+//      location,       // { latitude: number, longitude: number }
+//      address,
+//      imageBase64,    // base64 string
+//      severity        // number from frontend
+//    } = req.body;
+//
+//    // Validate required fields
+//    if (!departmentType || !description || !location || !address || severity === undefined) {
+//      return res.status(400).json({ error: "All required fields must be provided" });
+//    }
+//
+//    // Validate location format
+//    if (typeof location !== "object" || location.latitude === undefined || location.longitude === undefined) {
+//      return res.status(400).json({ error: "Location must be a JSON object with latitude and longitude" });
+//    }
+//
+//    // Set initial status and isCritical
+//    const status = "PENDING";
+//    const isCritical = Number(severity) > 6;
+//
+//    // Initialize image URL (null by default)
+//    let imageUrl = null;
+//
+//    // Handle image upload if present
+//    if (imageBase64) {
+//      try {
+//        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+//        const buffer = Buffer.from(base64Data, "base64");
+//        const fileName = `${Date.now()}_complaint.jpg`;
+//
+//        const { error: uploadError } = await supabase.storage
+//          .from("complaint_bucket")
+//          .upload(fileName, buffer, {
+//            contentType: "image/jpeg",
+//            cacheControl: "3600",
+//          });
+//
+//        if (uploadError) {
+//          console.error("Image upload error:", uploadError);
+//          return res.status(500).json({ error: "Error uploading image to Supabase" });
+//        }
+//
+//        const { data: publicUrlData } = supabase.storage
+//          .from("complaint_bucket")
+//          .getPublicUrl(fileName);
+//
+//        imageUrl = publicUrlData.publicUrl;
+//      } catch (imageError) {
+//        console.error("Image processing error:", imageError);
+//        return res.status(500).json({ error: "Error processing image" });
+//      }
+//    }
+//
+//    // Insert complaint into the database
+//    const { data: newComplaint, error: insertError } = await supabase
+//      .from("Complaint")
+//      .insert([
+//        {
+//          departmentType,
+//          departmentId,
+//          description,
+//          authorAadhar,
+//          location,
+//          address,
+//          imageUrl,
+//          isCritical,
+//          status,
+//        },
+//      ])
+//      .select();
+//
+//    if (insertError) {
+//      console.error("Insert error:", insertError);
+//      return res.status(500).json({ error: "Error inserting complaint into Supabase" });
+//    }
+//
+//    res.status(201).json({
+//      message: "Complaint created successfully",
+//      complaint: newComplaint[0],
+//    });
+//  } catch (err) {
+//    console.error("Server error:", err);
+//    res.status(500).json({ error: "Internal server error" });
+//  }
+//});
+
+
+//router.post("/createComplaint", async (req, res) => {
+//  try {
+//    const {
+//      departmentType,
+//      departmentId,
+//      title,          // frontend field
+//      description,
+//      authorAadhar,
+//      location,
+//      address,
+//      imageBase64,
+//      severity
+//    } = req.body;
+//
+//    if (!departmentType || !description || !location || !address || severity === undefined) {
+//      return res.status(400).json({ error: "All required fields must be provided" });
+//    }
+//
+//    if (typeof location !== "object" || location.latitude === undefined || location.longitude === undefined) {
+//      return res.status(400).json({ error: "Location must be a JSON object with latitude and longitude" });
+//    }
+//
+//    const status = "PENDING";
+//    const isCritical = Number(severity) > 6;
+//    let imageUrl = null;
+//
+//    if (imageBase64) {
+//      try {
+//        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+//        const buffer = Buffer.from(base64Data, "base64");
+//        const fileName = `${Date.now()}_complaint.jpg`;
+//
+//        const { error: uploadError } = await supabase.storage
+//          .from("complaint_bucket")
+//          .upload(fileName, buffer, {
+//            contentType: "image/jpeg",
+//            cacheControl: "3600",
+//          });
+//
+//        if (uploadError) {
+//          console.error("Image upload error:", uploadError);
+//          return res.status(500).json({ error: "Error uploading image to Supabase" });
+//        }
+//
+//        const { data: publicUrlData } = supabase.storage
+//          .from("complaint_bucket")
+//          .getPublicUrl(fileName);
+//
+//        imageUrl = publicUrlData.publicUrl;
+//      } catch (imageError) {
+//        console.error("Image processing error:", imageError);
+//        return res.status(500).json({ error: "Error processing image" });
+//      }
+//    }
+//
+//    // ✅ Fixed: Map `title` → `issueTitle`
+//    const { data: newComplaint, error: insertError } = await supabase
+//      .from("Complaint")
+//      .insert([
+//        {
+//          departmentType,
+//          departmentId,
+//          description,
+//          authorAadhar,
+//          location,
+//          address,
+//          imageUrl,
+//          isCritical,
+//          status,
+//          issueTitle: title,  // <-- Fix applied here
+//        },
+//      ])
+//      .select();
+//
+//    if (insertError) {
+//      console.error("Insert error:", insertError);
+//      return res.status(500).json({ error: "Error inserting complaint into Supabase" });
+//    }
+//
+//    res.status(201).json({
+//      message: "Complaint created successfully",
+//      complaint: newComplaint[0],
+//    });
+//  } catch (err) {
+//    console.error("Server error:", err);
+//    res.status(500).json({ error: "Internal server error" });
+//  }
+//});
+
 router.post("/createComplaint", async (req, res) => {
   try {
     const {
-      departmentType, // enum: 'ELEC', 'WATER', 'GARB', 'ROAD'
+      departmentType, // 'ELEC', 'WATER', 'GARB', 'ROAD'
       departmentId,
-      title,          // additional field, not stored but can be logged
+      title,
       description,
       authorAadhar,
       location,       // { latitude: number, longitude: number }
@@ -22,21 +206,17 @@ router.post("/createComplaint", async (req, res) => {
       severity        // number from frontend
     } = req.body;
 
-    // Validate required fields
+    // Basic validation
     if (!departmentType || !description || !location || !address || severity === undefined) {
       return res.status(400).json({ error: "All required fields must be provided" });
     }
 
-    // Validate location format
     if (typeof location !== "object" || location.latitude === undefined || location.longitude === undefined) {
       return res.status(400).json({ error: "Location must be a JSON object with latitude and longitude" });
     }
 
-    // Set initial status and isCritical
     const status = "PENDING";
     const isCritical = Number(severity) > 6;
-
-    // Initialize image URL (null by default)
     let imageUrl = null;
 
     // Handle image upload if present
@@ -69,13 +249,14 @@ router.post("/createComplaint", async (req, res) => {
       }
     }
 
-    // Insert complaint into the database
+    // Insert complaint into DB
     const { data: newComplaint, error: insertError } = await supabase
       .from("Complaint")
       .insert([
         {
           departmentType,
           departmentId,
+          title,
           description,
           authorAadhar,
           location,
@@ -101,7 +282,6 @@ router.post("/createComplaint", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 router.put('/resolveComp', async (req, res) => {
   try {
