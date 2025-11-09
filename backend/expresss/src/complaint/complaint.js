@@ -487,4 +487,36 @@ router.post("/updateProgress", async (req, res) => {
   }
 });
 
+router.post("/complaints/inprogress", async (req, res) => {
+  try {
+    const { departmentId } = req.body;
+
+    // Validate input
+    if (!departmentId) {
+      return res.status(400).json({ error: "Department ID is required" });
+    }
+
+    // Fetch complaints with status = INPROGRESS for the given department
+    const { data: complaints, error } = await supabase
+      .from("Complaint")
+      .select("*")
+      .eq("departmentId", departmentId)
+      .eq("status", "INPROGRESS");
+
+    if (error) {
+      console.error("Fetch error:", error);
+      return res.status(500).json({ error: "Failed to fetch complaints" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: complaints.length,
+      complaints,
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router
