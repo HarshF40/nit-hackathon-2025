@@ -7,15 +7,26 @@ class ComplaintInfoDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String title = complaint['title'] ?? 'No Title';
+    print('=== COMPLAINT DIALOG DEBUG ===');
+    print('Full complaint data: $complaint');
+    print('All keys: ${complaint.keys.toList()}');
+
+    String title = complaint['issueTitle'] ?? complaint['title'] ?? 'No Title';
     String category = complaint['departmentType'] ?? 'Unknown';
     String description = complaint['description'] ?? '';
     String latitude = complaint['location']?['latitude']?.toString() ?? '-';
     String longitude = complaint['location']?['longitude']?.toString() ?? '-';
-    String timestamp = complaint['dateTime'] ?? '';
+    String timestamp = complaint['dateTime'] ?? complaint['createdAt'] ?? '';
     String address = complaint['address'] ?? '';
     String status = complaint['status'] ?? '';
-    String imageUrl = complaint['imageUrl'] ?? '';
+    String imageUrl = complaint['imageUrl'] ?? complaint['image_url'] ?? '';
+
+    print('Extracted imageUrl: "$imageUrl"');
+    print('imageUrl type: ${imageUrl.runtimeType}');
+    print('imageUrl isEmpty: ${imageUrl.isEmpty}');
+    print('imageUrl isNotEmpty: ${imageUrl.isNotEmpty}');
+    print('Should show image: ${imageUrl.isNotEmpty}');
+    print('==============================');
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -176,6 +187,62 @@ class ComplaintInfoDialog extends StatelessWidget {
                           imageUrl,
                           fit: BoxFit.cover,
                           width: double.infinity,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              height: 200,
+                              alignment: Alignment.center,
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            print('Error loading image: $error');
+                            print('Image URL: $imageUrl');
+                            return Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.broken_image,
+                                    size: 48,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Failed to load image',
+                                    style: TextStyle(color: Colors.grey[600]),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                    ),
+                                    child: Text(
+                                      error.toString(),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[500],
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],

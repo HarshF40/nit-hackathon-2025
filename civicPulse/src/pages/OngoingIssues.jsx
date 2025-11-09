@@ -43,39 +43,93 @@ const OngoingIssues = () => {
         throw new Error('Department ID not found');
       }
 
-      // Fetch all complaints for this department
-      const response = await fetch(`${API_BASE_URL}/getComplaintsByDepartment/${departmentId}`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch complaints');
+      console.log('🔄 Fetching ongoing complaints for department:', departmentId);
+
+      let data = null;
+      let ongoingComplaints = [];
+
+      try {
+        // Try the new dedicated endpoint first
+        const response = await fetch(`${API_BASE_URL}/complaints/inprogress`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            departmentId: parseInt(departmentId)
+          }),
+          signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+        
+        if (response.ok) {
+          data = await response.json();
+          ongoingComplaints = data.complaints || [];
+          console.log('✅ Fetched from /complaints/inprogress endpoint');
+        } else {
+          throw new Error('Endpoint returned error: ' + response.status);
+        }
+      } catch (endpointError) {
+        console.warn('⚠️ /complaints/inprogress endpoint failed, trying fallback...', endpointError.message);
+        
+        // Fallback to the old endpoint and filter client-side
+        try {
+          const fallbackResponse = await fetch(`${API_BASE_URL}/getComplaintsByDepartment/${departmentId}`, {
+            signal: AbortSignal.timeout(5000)
+          });
+          
+          if (!fallbackResponse.ok) {
+            throw new Error('Fallback endpoint also failed');
+          }
+
+          const fallbackData = await fallbackResponse.json();
+          
+          // Filter only INPROGRESS complaints
+          ongoingComplaints = (fallbackData.complaints || []).filter(
+            complaint => complaint.status === 'INPROGRESS'
+          );
+          
+          console.log('✅ Fetched from fallback endpoint and filtered');
+        } catch (fallbackError) {
+          console.error('❌ Both endpoints failed:', fallbackError);
+          throw new Error('Unable to fetch complaints. Please check your connection.');
+        }
       }
 
-      const data = await response.json();
-      
-      // Filter only INPROGRESS complaints
-      const ongoingComplaints = data.complaints.filter(
-        complaint => complaint.status === 'INPROGRESS'
-      );
-
       // Transform data
-      const transformedComplaints = ongoingComplaints.map(complaint => ({
-        id: complaint.id,
-        description: complaint.description,
-        type: complaint.type || 'General',
-        location: complaint.location,
-        lat: parseFloat(complaint.latitude) || 0,
-        lng: parseFloat(complaint.longitude) || 0,
-        date: new Date(complaint.created_at).toLocaleDateString(),
-        status: complaint.status,
-        priority: complaint.priority || 'medium',
-        posterName: complaint.posterName || 'Anonymous',
-        image: complaint.imageURL || complaint.imageUrl || null,
-        progress: complaint.percentageComplete || 0,
-        downvotes: complaint.downvotes || 0
-      }));
+      const transformedComplaints = ongoingComplaints.map(complaint => {
+        // Handle latitude/longitude - might be stored as objects or strings
+        let latitude = 0;
+        let longitude = 0;
+        
+        if (complaint.latitude && typeof complaint.latitude === 'object') {
+          // If it's an object like {latitude: x, longitude: y}
+          latitude = parseFloat(complaint.latitude.latitude) || 0;
+          longitude = parseFloat(complaint.latitude.longitude) || 0;
+        } else {
+          // Normal case - direct values
+          latitude = parseFloat(complaint.latitude) || 0;
+          longitude = parseFloat(complaint.longitude) || 0;
+        }
+
+        return {
+          id: complaint.id,
+          description: complaint.description,
+          type: complaint.type || 'General',
+          location: typeof complaint.location === 'string' ? complaint.location : 'Unknown Location',
+          lat: latitude,
+          lng: longitude,
+          date: new Date(complaint.created_at).toLocaleDateString(),
+          status: complaint.status,
+          priority: complaint.priority || 'medium',
+          posterName: complaint.posterName || 'Anonymous',
+          image: complaint.imageURL || complaint.imageUrl || null,
+          progress: complaint.percentageComplete || 0,
+          downvotes: complaint.downvotes || 0
+        };
+      });
 
       setComplaints(transformedComplaints);
-      console.log('✅ Loaded ongoing complaints:', transformedComplaints.length);
+      console.log('✅ Loaded', transformedComplaints.length, 'ongoing complaints');
     } catch (error) {
       console.error('❌ Error fetching ongoing complaints:', error);
       alert('Failed to load ongoing complaints: ' + error.message);
