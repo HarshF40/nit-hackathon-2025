@@ -299,7 +299,7 @@ Respond ONLY with the JSON object above, nothing else.
                 onChanged: null, // Read-only
               ),
               const SizedBox(height: 24),
-              // Title (read-only after AI)
+              // Title (editable)
               const Text(
                 'Issue Title',
                 style: TextStyle(
@@ -317,7 +317,6 @@ Respond ONLY with the JSON object above, nothing else.
                 ),
                 child: TextField(
                   controller: _titleController,
-                  readOnly: true,
                   decoration: const InputDecoration(
                     hintText: 'Enter a brief title',
                     border: InputBorder.none,
