@@ -519,4 +519,84 @@ router.post("/complaints/inprogress", async (req, res) => {
   }
 });
 
+router.post("/getInProgressComplaintsByAadhar", async (req, res) => {
+  try {
+    const { aadhar } = req.body;
+
+    // Validate input
+    if (!aadhar) {
+      return res.status(400).json({ error: "Aadhar number is required" });
+    }
+
+    // Fetch complaints that match the given aadhar and are in progress
+    const { data: complaints, error } = await supabase
+      .from("Complaint")
+      .select("*")
+      .eq("authorAadhar", aadhar)
+      .eq("status", "INPROGRESS")
+      .order("dateTime", { ascending: false });
+
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      return res.status(500).json({ error: "Error fetching complaints from Supabase" });
+    }
+
+    // Return result
+    return res.status(200).json({
+      success: true,
+      total: complaints.length,
+      complaints,
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/downvoteComplaint", async (req, res) => {
+  try {
+    const { complaintId } = req.body;
+
+    // Validate input
+    if (!complaintId) {
+      return res.status(400).json({ error: "Complaint ID is required" });
+    }
+
+    // Fetch current downvotes
+    const { data: existingComplaint, error: fetchError } = await supabase
+      .from("Complaint")
+      .select("downvotes")
+      .eq("id", complaintId)
+      .single();
+
+    if (fetchError || !existingComplaint) {
+      console.error("Fetch error:", fetchError);
+      return res.status(404).json({ error: "Complaint not found" });
+    }
+
+    const currentDownvotes = existingComplaint.downvotes || 0;
+
+    // Update downvotes count (+1)
+    const { error: updateError } = await supabase
+      .from("Complaint")
+      .update({ downvotes: currentDownvotes + 1 })
+      .eq("id", complaintId);
+
+    if (updateError) {
+      console.error("Update error:", updateError);
+      return res.status(500).json({ error: "Failed to update downvotes" });
+    }
+
+    // Respond with success
+    return res.status(200).json({
+      success: true,
+      message: "Complaint downvoted successfully",
+      newDownvoteCount: currentDownvotes + 1,
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router
