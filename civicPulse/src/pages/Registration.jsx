@@ -177,15 +177,24 @@ const Registration = () => {
 
     try {
       // Create FormData for multipart/form-data submission
+      // Send location in both shapes to be compatible with backend and UI consumers
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('type', formData.type);
       formDataToSend.append('address', formData.address);
       formDataToSend.append('password', formData.password);
-      formDataToSend.append('location', JSON.stringify({
-        lat: parseFloat(formData.location.lat),
-        lng: parseFloat(formData.location.lng)
-      }));
+
+      const parsedLat = parseFloat(formData.location.lat);
+      const parsedLng = parseFloat(formData.location.lng);
+      const locationObj = {
+        // include both canonical and short keys
+        latitude: isNaN(parsedLat) ? null : parsedLat,
+        longitude: isNaN(parsedLng) ? null : parsedLng,
+        lat: isNaN(parsedLat) ? null : parsedLat,
+        lng: isNaN(parsedLng) ? null : parsedLng,
+      };
+
+      formDataToSend.append('location', JSON.stringify(locationObj));
       formDataToSend.append('registrationCopy', pdfFile); // Send the actual file
 
       const response = await fetch(`${API_BASE_URL}/regdep`, {
