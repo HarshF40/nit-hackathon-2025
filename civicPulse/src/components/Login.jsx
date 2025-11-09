@@ -46,6 +46,11 @@ const Login = () => {
         localStorage.setItem('authType', data.type);
         localStorage.setItem('departmentName', name);
         localStorage.setItem('isAuthenticated', 'true');
+        
+        // Save department ID if available (for API calls)
+        if (data.id) {
+          localStorage.setItem('departmentId', data.id);
+        }
 
         const routes = {
           'ELEC': '/electricity',
@@ -68,6 +73,7 @@ const Login = () => {
         localStorage.setItem('authType', localUser.type);
         localStorage.setItem('departmentName', localUser.name);
         localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('departmentId', localUser.id);
 
         const routes = {
           'ELEC': '/electricity',
@@ -93,6 +99,7 @@ const Login = () => {
         localStorage.setItem('authType', localUserFallback.type);
         localStorage.setItem('departmentName', localUserFallback.name);
         localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('departmentId', localUserFallback.id);
 
         const routes = {
           'ELEC': '/electricity',
