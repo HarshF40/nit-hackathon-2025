@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import { createClient } from "@supabase/supabase-js";
 
 const router = express.Router();
@@ -13,7 +13,7 @@ router.post("/createComplaint", async (req, res) => {
     const {
       departmentType, // enum: 'ELEC', 'WATER', 'GARB', 'ROAD'
       departmentId,
-      issueTitle,     // Changed from 'title' to 'issueTitle'
+      title,          // additional field, not stored but can be logged
       description,
       authorAadhar,
       location,       // { latitude: number, longitude: number }
@@ -23,7 +23,7 @@ router.post("/createComplaint", async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!departmentType || !description || !location || !address || severity === undefined) {        
+    if (!departmentType || !description || !location || !address || severity === undefined) {
       return res.status(400).json({ error: "All required fields must be provided" });
     }
 
@@ -44,7 +44,7 @@ router.post("/createComplaint", async (req, res) => {
       try {
         const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
         const buffer = Buffer.from(base64Data, "base64");
-        const fileName = ${Date.now()}_complaint.jpg;
+        const fileName = `${Date.now()}_complaint.jpg`;
 
         const { error: uploadError } = await supabase.storage
           .from("complaint_bucket")
@@ -76,7 +76,6 @@ router.post("/createComplaint", async (req, res) => {
         {
           departmentType,
           departmentId,
-          issueTitle,    // Using issueTitle field
           description,
           authorAadhar,
           location,
@@ -84,7 +83,6 @@ router.post("/createComplaint", async (req, res) => {
           imageUrl,
           isCritical,
           status,
-          downvotes: 0,  // Initialize downvotes to 0
         },
       ])
       .select();
@@ -104,69 +102,11 @@ router.post("/createComplaint", async (req, res) => {
   }
 });
 
-// POST /downvoteComplaint - Increment downvotes for a complaint
-router.post("/downvoteComplaint", async (req, res) => {
-  try {
-    const { id } = req.body;
-
-    if (!id || isNaN(parseInt(id))) {
-      return res.status(400).json({ error: 'Invalid complaint ID' });
-    }
-
-    const complaintId = parseInt(id);
-
-    // Get current downvotes
-    const { data: complaint, error: fetchError } = await supabase
-      .from('Complaint')
-      .select('downvotes')
-      .eq('id', complaintId)
-      .single();
-
-    if (fetchError || !complaint) {
-      console.error('Fetch error:', fetchError);
-      return res.status(404).json({ error: 'Complaint not found' });
-    }
-
-    // Increment downvotes
-    const newDownvotes = (complaint.downvotes || 0) + 1;
-
-    const { data, error } = await supabase
-      .from('Complaint')
-      .update({ downvotes: newDownvotes })
-      .eq('id', complaintId)
-      .select();
-
-    if (error) {
-      console.error('Update error:', error);
-      return res.status(500).json({ error: 'Failed to downvote complaint' });
-    }
-
-    if (!data || data.length === 0) {
-      return res.status(404).json({ error: 'Complaint not found' });
-    }
-
-    // Optionally track in Downvote table
-    try {
-      await supabase.from('Downvote').insert([{}]);
-    } catch (downvoteError) {
-      console.log('Downvote tracking error (non-critical):', downvoteError);
-    }
-
-    res.json({
-      message: 'Downvote recorded successfully',
-      complaint: data[0]
-    });
-  } catch (error) {
-    console.error('Error downvoting complaint:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 
 router.put('/resolveComp', async (req, res) => {
   try {
     const { id } = req.body;
-
+    
     if (!id || isNaN(parseInt(id))) {
       return res.status(400).json({ error: 'Invalid complaint ID' });
     }
@@ -188,9 +128,9 @@ router.put('/resolveComp', async (req, res) => {
       return res.status(404).json({ error: 'Complaint not found' });
     }
 
-    res.json({
+    res.json({ 
       message: 'Complaint resolved successfully',
-      complaint: data[0]
+      complaint: data[0] 
     });
   } catch (error) {
     console.error('Error resolving complaint:', error);
@@ -202,7 +142,7 @@ router.put('/resolveComp', async (req, res) => {
 router.get('/completedComplaints', async (req, res) => {
   try {
     const { userId } = req.query;
-
+    
     if (!userId || isNaN(parseInt(userId))) {
       return res.status(400).json({ error: 'Invalid user ID' });
     }
@@ -219,9 +159,9 @@ router.get('/completedComplaints', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch completed complaints' });
     }
 
-    res.json({
+    res.json({ 
       message: 'Completed complaints retrieved successfully',
-      complaints: data
+      complaints: data 
     });
   } catch (error) {
     console.error('Error fetching completed complaints:', error);
@@ -233,7 +173,7 @@ router.get('/completedComplaints', async (req, res) => {
 router.put('/rejectComp', async (req, res) => {
   try {
     const { id } = req.body;
-
+    
     if (!id || isNaN(parseInt(id))) {
       return res.status(400).json({ error: 'Invalid complaint ID' });
     }
@@ -255,9 +195,9 @@ router.put('/rejectComp', async (req, res) => {
       return res.status(404).json({ error: 'Complaint not found' });
     }
 
-    res.json({
+    res.json({ 
       message: 'Complaint rejected successfully',
-      complaint: data[0]
+      complaint: data[0] 
     });
   } catch (error) {
     console.error('Error rejecting complaint:', error);
@@ -269,7 +209,7 @@ router.put('/rejectComp', async (req, res) => {
 router.get('/rejectedComplaints', async (req, res) => {
   try {
     const { departmentId } = req.query;
-
+    
     if (!departmentId || isNaN(parseInt(departmentId))) {
       return res.status(400).json({ error: 'Invalid department ID' });
     }
@@ -286,9 +226,9 @@ router.get('/rejectedComplaints', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch rejected complaints' });
     }
 
-    res.json({
+    res.json({ 
       message: 'Rejected complaints retrieved successfully',
-      complaints: data
+      complaints: data 
     });
   } catch (error) {
     console.error('Error fetching rejected complaints:', error);
@@ -309,9 +249,9 @@ router.get('/allComplaints', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch complaints' });
     }
 
-    res.json({
+    res.json({ 
       message: 'All complaints retrieved successfully',
-      complaints: data
+      complaints: data 
     });
   } catch (error) {
     console.error('Error fetching complaints:', error);
@@ -393,7 +333,7 @@ router.post("/getComplaintsByRadius", async (req, res) => {
       });
     }
 
-    // Fetch all complaints (contains JSONB location)
+    // Fetch all complaints (contains JSONB `location`)
     const { data: complaints, error } = await supabase
       .from("Complaint")
       .select("*");
@@ -417,7 +357,7 @@ router.post("/getComplaintsByRadius", async (req, res) => {
 
     // Respond with filtered results
     res.status(200).json({
-      message: Found  complaints within  km,
+      message: `Found ${filtered.length} complaints within ${radiusKm} km`,
       total: filtered.length,
       complaints: filtered
     });
@@ -540,6 +480,38 @@ router.post("/updateProgress", async (req, res) => {
     return res.status(200).json({
       message: "Progress updated successfully",
       complaint: updatedComplaint,
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/complaints/inprogress", async (req, res) => {
+  try {
+    const { departmentId } = req.body;
+
+    // Validate input
+    if (!departmentId) {
+      return res.status(400).json({ error: "Department ID is required" });
+    }
+
+    // Fetch complaints with status = INPROGRESS for the given department
+    const { data: complaints, error } = await supabase
+      .from("Complaint")
+      .select("*")
+      .eq("departmentId", departmentId)
+      .eq("status", "INPROGRESS");
+
+    if (error) {
+      console.error("Fetch error:", error);
+      return res.status(500).json({ error: "Failed to fetch complaints" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      count: complaints.length,
+      complaints,
     });
   } catch (err) {
     console.error("Server error:", err);

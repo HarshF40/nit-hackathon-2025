@@ -14,13 +14,11 @@ import mapFetch from "../src/fetch/map.js"
 dotenv.config();
 const app = express();
 
-app.use(
-  cors({
-    origin: "*", // In production, restrict this to your frontend domain
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors({
+  origin: "*", // or specify your frontend origin like "http://localhost:5173"
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
 app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({ limit:'50mb', extended: true }));
