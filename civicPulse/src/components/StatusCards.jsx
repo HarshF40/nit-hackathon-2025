@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FaClock, FaHourglassHalf, FaCheckCircle, FaExclamationTriangle, FaTimes } from 'react-icons/fa';
 import { getStatistics } from '../data/departmentData';
 import { getComplaintsByDepartment, transformComplaintData } from '../services/api';
 import './StatusCards.css';
 
 const StatusCards = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     current: 0,
     pending: 0,
@@ -71,36 +73,56 @@ const StatusCards = () => {
     fetchComplaintsData();
   }, []); // Run once on component mount
 
+  // Handle card click navigation
+  const handleCardClick = (status) => {
+    if (status === 'resolved') {
+      navigate('/resolved-issues');
+    } else if (status === 'pending') {
+      navigate('/ongoing-issues');
+    } else if (status === 'current' || status === 'critical' || status === 'rejected') {
+      navigate('/complaints', { 
+        state: { 
+          status: status
+        } 
+      });
+    }
+  };
+
   const cards = [
     {
       title: 'Current Issues',
       count: loading ? '...' : stats.current,
       icon: <FaClock size={40} />,
       color: '#398AB9',
+      status: 'current'
     },
     {
       title: 'Ongoing Issues',
       count: loading ? '...' : stats.pending,
       icon: <FaHourglassHalf size={40} />,
       color: '#FFA500',
+      status: 'pending'
     },
     {
       title: 'Resolved Issues',
       count: loading ? '...' : stats.resolved,
       icon: <FaCheckCircle size={40} />,
       color: '#4CAF50',
+      status: 'resolved'
     },
     {
       title: 'Critical Issues',
       count: loading ? '...' : stats.critical,
       icon: <FaExclamationTriangle size={40} />,
       color: '#FF4444',
+      status: 'critical'
     },
     {
       title: 'Rejected',
       count: loading ? '...' : stats.rejected,
       icon: <FaTimes size={40} />,
       color: '#9E9E9E',
+      status: 'rejected'
     },
   ];
 
@@ -121,7 +143,12 @@ const StatusCards = () => {
       )}
       <div className="status-cards-container">
         {cards.map((card, index) => (
-          <div key={index} className="status-card">
+          <div 
+            key={index} 
+            className="status-card"
+            onClick={() => handleCardClick(card.status)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className="card-icon" style={{ color: card.color }}>
               {card.icon}
             </div>

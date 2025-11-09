@@ -48,17 +48,21 @@ class _ComplainDraftState extends State<ComplainDraft> {
   Future<void> _fetchDepartments() async {
     try {
       final departments = await DepartmentService.getAllDepartments();
-      setState(() {
-        _departments = departments;
-        _isLoadingDepartments = false;
-      });
+      if (mounted) {
+        setState(() {
+          _departments = departments;
+          _isLoadingDepartments = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoadingDepartments = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load departments')));
+      if (mounted) {
+        setState(() {
+          _isLoadingDepartments = false;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to load departments')));
+      }
     }
   }
 
@@ -149,7 +153,7 @@ class _ComplainDraftState extends State<ComplainDraft> {
                               final aiPrompt = '''
 You are an information extraction system. Given an image and its context, extract ONLY the following complaint fields as a pure JSON object (no extra text, no explanation, no markdown):
 {
-  "title": "Short title for the complaint",
+  "issueTitle": "Short title for the complaint",
   "category": "One of: ELEC, GARB, ROAD, WATER",
   "description": "Short description for the image",
   "severity": "Integer from 1 to 10 (1 = lowest, 10 = highest)"
@@ -177,34 +181,44 @@ Respond ONLY with the JSON object above, nothing else.
                               if (response.statusCode == 200) {
                                 final data = jsonDecode(response.body);
                                 final summary = data['summary'];
-                                setState(() {
-                                  if (summary['title'] != null &&
-                                      summary['title'].toString().isNotEmpty) {
-                                    _titleController.text = summary['title'];
-                                  }
-                                  if (summary['category'] != null)
-                                    _selectedCategory = summary['category'];
-                                  if (summary['description'] != null)
-                                    _descriptionController.text =
-                                        summary['description'];
-                                  if (summary['severity'] != null)
-                                    _severity = summary['severity'].toString();
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('AI summary applied!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'AI summary failed: ${response.body}',
+                                if (mounted) {
+                                  setState(() {
+                                    if (summary['issueTitle'] != null &&
+                                        summary['issueTitle']
+                                            .toString()
+                                            .isNotEmpty) {
+                                      _titleController.text =
+                                          summary['issueTitle'];
+                                    }
+                                    if (summary['category'] != null)
+                                      _selectedCategory = summary['category'];
+                                    if (summary['description'] != null)
+                                      _descriptionController.text =
+                                          summary['description'];
+                                    if (summary['severity'] != null)
+                                      _severity = summary['severity']
+                                          .toString();
+                                  });
+                                }
+                                if (mounted && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('AI summary applied!'),
+                                      backgroundColor: Colors.green,
                                     ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
+                                  );
+                                }
+                              } else {
+                                if (mounted && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'AI summary failed: ${response.body}',
+                                      ),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
                               }
                             },
                       child: const Text('Get AI Summary'),
@@ -400,7 +414,24 @@ Respond ONLY with the JSON object above, nothing else.
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                        // Clear all fields
+                        _titleController.clear();
+                        _descriptionController.clear();
+                        _addressController.clear();
+                        setState(() {
+                          _selectedDepartmentId = null;
+                          _selectedCategory = null;
+                          _severity = null;
+                          _imageBase64 = null;
+                        });
+
+                        // Show confirmation
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Form cleared'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
@@ -410,7 +441,7 @@ Respond ONLY with the JSON object above, nothing else.
                         ),
                       ),
                       child: const Text(
-                        'Cancel',
+                        'Clear',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -451,16 +482,18 @@ Respond ONLY with the JSON object above, nothing else.
                           return;
                         }
                         final location = {
-                          'latitude': _latitude,
-                          'longitude': _longitude,
+                          'latitude': double.parse(_latitude),
+                          'longitude': double.parse(_longitude),
                         };
+                        print('Creating complaint with location: $location');
+
                         final isCritical =
                             int.tryParse(_severity ?? '0') != null &&
                             int.parse(_severity!) > 6;
                         final body = {
                           'departmentType': _selectedCategory,
                           'departmentId': _selectedDepartmentId,
-                          'title': _titleController.text,
+                          'issueTitle': _titleController.text,
                           'description': _descriptionController.text,
                           'authorAadhar': aadhar,
                           'location': location,
@@ -479,22 +512,38 @@ Respond ONLY with the JSON object above, nothing else.
                         );
                         if (response.statusCode == 201 ||
                             response.statusCode == 200) {
-                          final data = jsonDecode(response.body);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Complaint submitted successfully!',
+                          // Clear the form after successful submission
+                          if (mounted) {
+                            _titleController.clear();
+                            _descriptionController.clear();
+                            _addressController.clear();
+                            setState(() {
+                              _selectedDepartmentId = null;
+                              _selectedCategory = null;
+                              _severity = null;
+                              _imageBase64 = null;
+                            });
+                          }
+
+                          if (mounted && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Complaint submitted successfully!',
+                                ),
+                                backgroundColor: Colors.green,
                               ),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
+                            );
+                          }
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error: ${response.body}'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
+                          if (mounted && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: ${response.body}'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(

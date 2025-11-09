@@ -11,6 +11,7 @@ import Teams from './pages/Teams';
 import Leaderboard from './pages/Leaderboard';
 import ComplaintsList from './pages/ComplaintsList';
 import ResolvedIssues from './pages/ResolvedIssues';
+import OngoingIssues from './pages/OngoingIssues';
 import AISuggestions from './pages/AISuggestions';
 import './App.css';
 
@@ -101,6 +102,16 @@ function App() {
             element={
               <ProtectedRoute requiredType={null}>
                 <ResolvedIssues />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Ongoing Issues route - accessible to all authenticated users */}
+          <Route 
+            path="/ongoing-issues" 
+            element={
+              <ProtectedRoute requiredType={null}>
+                <OngoingIssues />
               </ProtectedRoute>
             } 
           />

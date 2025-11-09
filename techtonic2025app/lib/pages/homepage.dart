@@ -9,6 +9,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../utils/user_preferences.dart';
 import '../config/env_config.dart';
+import 'leaderboard.dart';
+import 'statistics_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -59,6 +61,7 @@ class _HomePageState extends State<HomePage> {
       for (final c in complaints) {
         switch (c['status']) {
           case 'ONGOING':
+          case 'INPROGRESS':
             ongoing++;
             break;
           case 'PENDING':
@@ -120,7 +123,7 @@ class _HomePageState extends State<HomePage> {
                 IconButton(
                   icon: const Icon(Icons.refresh, color: Colors.blue),
                   onPressed: () {
-                    // Handle refresh
+                    _fetchComplaintStats();
                   },
                 ),
               ],
@@ -129,25 +132,59 @@ class _HomePageState extends State<HomePage> {
             Row(
               children: [
                 Expanded(
-                  child: AspectRatio(
-                    aspectRatio: 0.9,
-                    child: StatisticsCard(
-                      title: 'Total Requests',
-                      count: _isLoadingStats ? '-' : totalRequests.toString(),
-                      icon: Icons.description,
-                      backgroundColor: const Color(0xFF3B9DFF),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StatisticsDetailPage(
+                            title: 'Total Requests',
+                            count: totalRequests.toString(),
+                            icon: Icons.description,
+                            backgroundColor: const Color(0xFF3B9DFF),
+                            type: 'total',
+                          ),
+                        ),
+                      );
+                    },
+                    child: AspectRatio(
+                      aspectRatio: 0.9,
+                      child: StatisticsCard(
+                        title: 'Total Requests',
+                        count: _isLoadingStats ? '-' : totalRequests.toString(),
+                        icon: Icons.description,
+                        backgroundColor: const Color(0xFF3B9DFF),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: AspectRatio(
-                    aspectRatio: 0.9,
-                    child: StatisticsCard(
-                      title: 'Ongoing requests',
-                      count: _isLoadingStats ? '-' : ongoingRequests.toString(),
-                      icon: Icons.access_time,
-                      backgroundColor: const Color(0xFFFF9800),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StatisticsDetailPage(
+                            title: 'Ongoing Requests',
+                            count: ongoingRequests.toString(),
+                            icon: Icons.access_time,
+                            backgroundColor: const Color(0xFFFF9800),
+                            type: 'ongoing',
+                          ),
+                        ),
+                      );
+                    },
+                    child: AspectRatio(
+                      aspectRatio: 0.9,
+                      child: StatisticsCard(
+                        title: 'Ongoing requests',
+                        count: _isLoadingStats
+                            ? '-'
+                            : ongoingRequests.toString(),
+                        icon: Icons.access_time,
+                        backgroundColor: const Color(0xFFFF9800),
+                      ),
                     ),
                   ),
                 ),
@@ -157,27 +194,61 @@ class _HomePageState extends State<HomePage> {
             Row(
               children: [
                 Expanded(
-                  child: AspectRatio(
-                    aspectRatio: 0.9,
-                    child: StatisticsCard(
-                      title: 'Pending requests',
-                      count: _isLoadingStats ? '-' : pendingRequests.toString(),
-                      icon: Icons.hourglass_empty,
-                      backgroundColor: const Color(0xFF66BB6A),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StatisticsDetailPage(
+                            title: 'Pending Requests',
+                            count: pendingRequests.toString(),
+                            icon: Icons.hourglass_empty,
+                            backgroundColor: const Color(0xFF66BB6A),
+                            type: 'pending',
+                          ),
+                        ),
+                      );
+                    },
+                    child: AspectRatio(
+                      aspectRatio: 0.9,
+                      child: StatisticsCard(
+                        title: 'Pending requests',
+                        count: _isLoadingStats
+                            ? '-'
+                            : pendingRequests.toString(),
+                        icon: Icons.hourglass_empty,
+                        backgroundColor: const Color(0xFF66BB6A),
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: AspectRatio(
-                    aspectRatio: 0.9,
-                    child: StatisticsCard(
-                      title: 'Completed requests',
-                      count: _isLoadingStats
-                          ? '-'
-                          : completedRequests.toString(),
-                      icon: Icons.check_circle_outline,
-                      backgroundColor: const Color(0xFFAB47BC),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StatisticsDetailPage(
+                            title: 'Completed Requests',
+                            count: completedRequests.toString(),
+                            icon: Icons.check_circle_outline,
+                            backgroundColor: const Color(0xFFAB47BC),
+                            type: 'completed',
+                          ),
+                        ),
+                      );
+                    },
+                    child: AspectRatio(
+                      aspectRatio: 0.9,
+                      child: StatisticsCard(
+                        title: 'Completed requests',
+                        count: _isLoadingStats
+                            ? '-'
+                            : completedRequests.toString(),
+                        icon: Icons.check_circle_outline,
+                        backgroundColor: const Color(0xFFAB47BC),
+                      ),
                     ),
                   ),
                 ),
@@ -196,7 +267,7 @@ class _HomePageState extends State<HomePage> {
       case 1:
         return const ComplainDraft();
       case 2:
-        return const Center(child: Text('Leaderboard Coming Soon'));
+        return const LeaderboardPage();
       case 3:
         return const SocialMediaPage();
       default:

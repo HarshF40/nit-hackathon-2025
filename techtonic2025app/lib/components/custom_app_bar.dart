@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../pages/notification_page.dart';
+import '../pages/login_page.dart';
+import '../utils/user_preferences.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -27,7 +30,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 color: Colors.black,
               ),
               onPressed: () {
-                // Handle notification tap
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationPage(),
+                  ),
+                );
               },
             ),
             Positioned(
@@ -45,9 +53,43 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ],
         ),
         IconButton(
-          icon: const Icon(Icons.file_upload_outlined, color: Colors.black),
-          onPressed: () {
-            // Handle upload/export tap
+          icon: const Icon(Icons.logout, color: Colors.black),
+          onPressed: () async {
+            // Show confirmation dialog
+            final shouldLogout = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Logout'),
+                content: const Text('Are you sure you want to logout?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
+              ),
+            );
+
+            if (shouldLogout == true) {
+              // Clear user data
+              await UserPreferences.clearAadharNumber();
+
+              // Navigate to login page and clear all previous routes
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  (route) => false,
+                );
+              }
+            }
           },
         ),
       ],

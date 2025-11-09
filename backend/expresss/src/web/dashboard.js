@@ -90,14 +90,27 @@ router.post("/getDepartmentId", async (req, res) => {
 //});
 
 router.post("/getComplaintsByDepartment", async (req, res) => {
+  console.log("Called get complaints by id")
   try {
     const { departmentId } = req.body;
 
     // Validate input
     if (!departmentId) {
-      return res.status(400).json({ error: "Department ID is required" });
+      return res.status(400).json({ error: "departmentId is required" });
     }
 
+<<<<<<< HEAD
+    // Fetch complaints for this department
+    const { data: complaints, error } = await supabase
+      .from("Complaint")
+      .select("*")
+      .eq("departmentId", departmentId)
+      .order("dateTime", { ascending: false }); // Latest first
+
+    if (error) {
+      console.error("Supabase fetch error:", error);
+      return res.status(500).json({ error: "Error fetching complaints" });
+=======
     // Fetch all complaints for that department
     const { data: complaints, error: fetchError } = await supabase
       .from("Complaint")
@@ -108,13 +121,19 @@ router.post("/getComplaintsByDepartment", async (req, res) => {
     if (fetchError) {
       console.error("Fetch error:", fetchError);
       return res.status(500).json({ error: "Error fetching complaints from Supabase" });
+>>>>>>> 90e7d7d1358014dab215b4c6c8055073a3c811d0
     }
 
     // Send response
     return res.status(200).json({
       success: true,
+<<<<<<< HEAD
+      message: "Complaints fetched successfully",
+      complaints: complaints || [],
+=======
       total: complaints.length,
       complaints,
+>>>>>>> 90e7d7d1358014dab215b4c6c8055073a3c811d0
     });
   } catch (err) {
     console.error("Server error:", err);
