@@ -368,4 +368,123 @@ router.post("/getComplaintsByRadius", async (req, res) => {
   }
 });
 
+router.post("/markComplaintInProgress", async (req, res) => {
+  try {
+    const { complaintId } = req.body;
+
+    // Validate input
+    if (!complaintId) {
+      return res.status(400).json({ error: "Complaint ID is required" });
+    }
+
+    // Update the complaint status
+    const { data, error } = await supabase
+      .from("Complaint")
+      .update({ status: "INPROGRESS" })
+      .eq("id", complaintId)
+      .select();
+
+    if (error) {
+      console.error("Update error:", error);
+      return res.status(500).json({ error: "Failed to update complaint status" });
+    }
+
+    // If no complaint found with that ID
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: "Complaint not found" });
+    }
+
+    return res.status(200).json({
+      message: "Complaint status updated to INPROGRESS successfully",
+      updatedComplaint: data[0],
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/getInProgressComplaints", async (req, res) => {
+  try {
+    // Fetch all complaints with status INPROGRESS
+    const { data: complaints, error } = await supabase
+      .from("Complaint")
+      .select("*")
+      .eq("status", "INPROGRESS")
+      .order("dateTime", { ascending: false }); // newest first
+
+    if (error) {
+      console.error("Fetch error:", error);
+      return res.status(500).json({ error: "Failed to fetch in-progress complaints" });
+    }
+
+    // If no complaints found
+    if (!complaints || complaints.length === 0) {
+      return res.status(200).json({
+        message: "No in-progress complaints found",
+        complaints: [],
+      });
+    }
+
+    // Return complaints list
+    return res.status(200).json({
+      message: "In-progress complaints fetched successfully",
+      total: complaints.length,
+      complaints,
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/updateProgress", async (req, res) => {
+  try {
+    const { complaintId } = req.body;
+
+    // Validate input
+    if (!complaintId) {
+      return res.status(400).json({ error: "Complaint ID is required" });
+    }
+
+    // Fetch the current percentageComplete
+    const { data: complaint, error: fetchError } = await supabase
+      .from("Complaint")
+      .select("percentageComplete")
+      .eq("id", complaintId)
+      .single();
+
+    if (fetchError || !complaint) {
+      console.error("Fetch error:", fetchError);
+      return res.status(404).json({ error: "Complaint not found" });
+    }
+
+    // Calculate new progress
+    let newProgress = complaint.percentageComplete + 25;
+    if (newProgress > 100) newProgress = 100; // Cap at 100%
+
+    // Update the complaint
+    const { data: updatedComplaint, error: updateError } = await supabase
+      .from("Complaint")
+      .update({ percentageComplete: newProgress })
+      .eq("id", complaintId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error("Update error:", updateError);
+      return res.status(500).json({ error: "Failed to update progress" });
+    }
+
+    // Return updated record
+    return res.status(200).json({
+      message: "Progress updated successfully",
+      complaint: updatedComplaint,
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router
