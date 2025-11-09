@@ -44,50 +44,84 @@ router.post("/getDepartmentId", async (req, res) => {
   }
 });
 
+//router.post("/getComplaintsByDepartment", async (req, res) => {
+//  try {
+//    const { departmentId } = req.body;
+//
+//    // Validate departmentId
+//    if (!departmentId) {
+//      return res.status(400).json({ error: "Department ID is required" });
+//    }
+//
+//    // Fetch complaints by department ID with poster details
+//    const { data: complaints, error: fetchError } = await supabase
+//      .from("Complaint")
+//      .select(`
+//        *,
+//        User:posterId (
+//          id,
+//          name,
+//          aadharNumber,
+//          profile_pic
+//        ),
+//        Department:departmentId (
+//          id,
+//          name,
+//          type
+//        )
+//      `)
+//      .eq("departmentId", departmentId)
+//      .order('dateTime', { ascending: false }); // Latest complaints first
+//
+//    if (fetchError) {
+//      console.error("Fetch error:", fetchError);
+//      return res.status(500).json({ error: "Error fetching complaints from database" });
+//    }
+//
+//    res.status(200).json({
+//      success: true,
+//      count: complaints.length,
+//      complaints: complaints,
+//    });
+//  } catch (err) {
+//    console.error("Server error:", err);
+//    res.status(500).json({ error: "Internal server error" });
+//  }
+//});
+
 router.post("/getComplaintsByDepartment", async (req, res) => {
   try {
     const { departmentId } = req.body;
 
-    // Validate departmentId
+    // Validate input
     if (!departmentId) {
       return res.status(400).json({ error: "Department ID is required" });
     }
 
-    // Fetch complaints by department ID with poster details
+    // Fetch all complaints for that department
     const { data: complaints, error: fetchError } = await supabase
       .from("Complaint")
-      .select(`
-        *,
-        User:posterId (
-          id,
-          name,
-          aadharNumber,
-          profile_pic
-        ),
-        Department:departmentId (
-          id,
-          name,
-          type
-        )
-      `)
+      .select("*")
       .eq("departmentId", departmentId)
-      .order('dateTime', { ascending: false }); // Latest complaints first
+      .order("dateTime", { ascending: false }); // Newest first
 
     if (fetchError) {
       console.error("Fetch error:", fetchError);
-      return res.status(500).json({ error: "Error fetching complaints from database" });
+      return res.status(500).json({ error: "Error fetching complaints from Supabase" });
     }
 
-    res.status(200).json({
+    // Send response
+    return res.status(200).json({
       success: true,
-      count: complaints.length,
-      complaints: complaints,
+      total: complaints.length,
+      complaints,
     });
   } catch (err) {
     console.error("Server error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 router.post("/getAiSummary", async (req, res) => {
   try {
@@ -148,6 +182,76 @@ Respond ONLY with the JSON object above, nothing else.
   } catch (err) {
     console.error("Server error:", err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.post("/createTeam", async (req, res) => {
+  try {
+    const { team_name, members } = req.body;
+
+    // Validation
+    if (!team_name || !Array.isArray(members) || members.length === 0) {
+      return res.status(400).json({
+        error: "Team name and members array are required",
+      });
+    }
+
+    // Insert into Supabase
+    const { data, error } = await supabase
+      .from("team")
+      .insert([
+        {
+          team_name,
+          members, // directly insert as text[]
+        },
+      ])
+      .select(); // return the inserted row
+
+    if (error) {
+      console.error("Insert error:", error);
+      return res.status(500).json({
+        error: "Error creating team in database",
+      });
+    }
+
+    // Respond with created team
+    return res.status(201).json({
+      message: "Team created successfully",
+      team: data[0],
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({
+      error: "Internal server error",
+    });
+  }
+});
+
+router.get("/getAllTeams", async (req, res) => {
+  try {
+    // Fetch all teams
+    const { data: teams, error } = await supabase
+      .from("team")
+      .select("*")
+      .order("created_at", { ascending: false }); // newest first
+
+    if (error) {
+      console.error("Fetch error:", error);
+      return res.status(500).json({
+        error: "Error fetching teams from database",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Teams fetched successfully",
+      count: teams.length,
+      teams,
+    });
+  } catch (err) {
+    console.error("Server error:", err);
+    return res.status(500).json({
+      error: "Internal server error",
+    });
   }
 });
 
