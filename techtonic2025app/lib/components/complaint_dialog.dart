@@ -133,7 +133,6 @@ class _ComplaintDialogState extends State<ComplaintDialog> {
     // Call the callback to add marker to map
     widget.onComplaintSubmitted(complaint);
 
-    // TODO: Submit complaint to API
     _showSuccessSnackBar('Complaint submitted successfully!');
     Navigator.pop(context);
   }
