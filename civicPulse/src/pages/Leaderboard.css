@@ -1,6 +1,6 @@
 .leaderboard-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  position: relative;
 }
 
 /* Content */
@@ -8,6 +8,8 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 2.5rem 2rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* Weekly Stats */
@@ -19,19 +21,23 @@
 }
 
 .stat-card {
-  background: white;
-  border-radius: 12px;
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .stat-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .stat-icon {

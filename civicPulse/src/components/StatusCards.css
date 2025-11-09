@@ -11,57 +11,90 @@
 }
 
 .status-card {
-  background-color: #D8D2CB;
-  border-radius: 12px;
+  background: var(--glass-bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
   padding: 2rem;
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.status-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, 
+    rgba(157,180,192,0.1) 0%, 
+    transparent 70%);
+  transition: transform 0.6s ease;
+  transform: scale(0);
+}
+
+.status-card:hover::before {
+  transform: scale(1);
 }
 
 .status-card:hover {
-  background-color: #398AB9;
-  transform: translateY(-5px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-6px);
+  box-shadow: var(--glass-shadow-hover);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-.status-card:hover .card-title,
+.status-card:hover .card-title {
+  color: var(--accent-blue);
+}
+
 .status-card:hover .card-count {
-  color: white;
+  color: var(--accent-blue);
 }
 
 .status-card:hover .card-icon {
-  color: white !important;
+  transform: scale(1.1);
 }
 
 .card-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
 }
 
 .card-content {
   flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .card-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1C658C;
+  color: var(--text-secondary);
   margin: 0 0 0.5rem 0;
-  transition: color 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.2px;
 }
 
 .card-count {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1C658C;
+  color: var(--text-primary);
   margin: 0;
-  transition: color 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -1px;
 }
 
 @media (max-width: 768px) {

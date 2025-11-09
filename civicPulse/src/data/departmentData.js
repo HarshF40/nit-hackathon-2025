@@ -263,7 +263,14 @@ export const environmentalImpact = {
 
 // Utility functions
 export const getStatistics = (issues) => {
-  // Current Issues = All PENDING, IN-PROGRESS, CURRENT, ACTIVE complaints
+  // ===== DATABASE STATUS MAPPING =====
+  // Database ComplaintStatus enum values are mapped as follows:
+  // - PENDING/OPEN/NEW → 'pending' (transformed in api.js)
+  // - IN_PROGRESS/ACTIVE/CURRENT → 'in-progress' (transformed in api.js)
+  // - RESOLVED/CLOSED/COMPLETED → 'resolved' (transformed in api.js)
+  // - REJECTED/DECLINED → 'rejected' (transformed in api.js)
+  
+  // Current Issues = All non-resolved, non-rejected complaints (pending + in-progress)
   const current = issues.filter(issue => 
     issue.status === "current" || 
     issue.status === "in-progress" || 
@@ -274,7 +281,7 @@ export const getStatistics = (issues) => {
     issue.status === "new"
   ).length;
   
-  // Pending is now same as current (for backward compatibility)
+  // Pending Issues = All pending/open/new + in-progress complaints
   const pending = issues.filter(issue => 
     issue.status === "pending" || 
     issue.status === "open" ||
@@ -284,6 +291,7 @@ export const getStatistics = (issues) => {
     issue.status === "active"
   ).length;
   
+  // Resolved Issues = All completed/closed complaints
   const resolved = issues.filter(issue => 
     issue.status === "resolved" || 
     issue.status === "closed" ||
@@ -291,6 +299,7 @@ export const getStatistics = (issues) => {
     issue.status === "done"
   ).length;
   
+  // Critical Issues = Complaints with critical priority (from database isCritical field)
   const critical = issues.filter(issue => 
     issue.status === "critical" || 
     issue.priority === "critical" ||
@@ -298,6 +307,7 @@ export const getStatistics = (issues) => {
     issue.priority === "urgent"
   ).length;
   
+  // Rejected Issues = Declined/dismissed complaints
   const rejected = issues.filter(issue =>
     issue.status === "rejected" ||
     issue.status === "declined" ||

@@ -7,7 +7,11 @@ import {
   FaCheckCircle, 
   FaCrosshairs,
   FaLock,
-  FaCity
+  FaCity,
+  FaRoad,
+  FaBolt,
+  FaTrash,
+  FaTint
 } from 'react-icons/fa';
 import './Registration.css';
 import dummyUsers from '../data/dummyUsers';
@@ -228,6 +232,27 @@ const Registration = () => {
       });
       const data = await response.json();
       if (response.ok && data && data.type) {
+        // Fetch department ID and store it
+        try {
+          const deptIdResponse = await fetch(`${API_BASE_URL}/getDepartmentId`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: loginName })
+          });
+          
+          const deptIdData = await deptIdResponse.json();
+          
+          if (deptIdResponse.ok && deptIdData.departmentId) {
+            localStorage.setItem('departmentId', deptIdData.departmentId.toString());
+            console.log('✅ Department ID stored:', deptIdData.departmentId);
+          } else {
+            console.warn('⚠️ Could not fetch department ID, but login successful');
+          }
+        } catch (deptIdError) {
+          console.warn('⚠️ Error fetching department ID:', deptIdError);
+          // Continue with login even if department ID fetch fails
+        }
+        
         localStorage.setItem('authType', data.type);
         localStorage.setItem('departmentName', loginName);
         localStorage.setItem('isAuthenticated', 'true');
@@ -247,6 +272,24 @@ const Registration = () => {
         (u) => (u.username || u.name).toLowerCase() === loginName.toLowerCase() && u.password === loginPassword
       );
       if (localUser) {
+        // Try to fetch department ID even in fallback mode
+        try {
+          const deptIdResponse = await fetch(`${API_BASE_URL}/getDepartmentId`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: localUser.name })
+          });
+          
+          const deptIdData = await deptIdResponse.json();
+          
+          if (deptIdResponse.ok && deptIdData.departmentId) {
+            localStorage.setItem('departmentId', deptIdData.departmentId.toString());
+            console.log('✅ Department ID stored (fallback mode):', deptIdData.departmentId);
+          }
+        } catch (deptIdError) {
+          console.warn('⚠️ Could not fetch department ID in fallback mode');
+        }
+        
         localStorage.setItem('authType', localUser.type);
         localStorage.setItem('departmentName', localUser.name);
         localStorage.setItem('isAuthenticated', 'true');
@@ -271,10 +314,30 @@ const Registration = () => {
         <span className="ball b5" />
         <span className="ball b6" />
         <span className="ball b7" />
+        {/* subtle foreground particles (small dots) — purely decorative */}
+        <span className="particle p1" aria-hidden="true" />
+        <span className="particle p2" aria-hidden="true" />
+        <span className="particle p3" aria-hidden="true" />
+        <span className="particle p4" aria-hidden="true" />
+        <span className="particle p5" aria-hidden="true" />
+        <span className="particle p6" aria-hidden="true" />
+        <span className="particle p7" aria-hidden="true" />
+        <span className="particle p8" aria-hidden="true" />
+        <span className="particle p9" aria-hidden="true" />
+        <span className="particle p10" aria-hidden="true" />
+        <span className="particle p11" aria-hidden="true" />
+        <span className="particle p12" aria-hidden="true" />
       </div>
       {/* Hero Section */}
       <section className="hero-panel">
         <div className="hero-overlay" />
+        {/* Department Icons Background */}
+        <div className="dept-icons-bg" aria-hidden="true">
+          <FaRoad className="dept-icon dept-icon-road" />
+          <FaBolt className="dept-icon dept-icon-elec" />
+          <FaTrash className="dept-icon dept-icon-garbage" />
+          <FaTint className="dept-icon dept-icon-water" />
+        </div>
         <div className="hero-content">
           <div className="hero-icon-wrap">
             <FaCity className="hero-icon" />
