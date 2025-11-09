@@ -63,7 +63,7 @@ Please provide a detailed, actionable analysis with specific recommendations for
       console.log('🤖 Sending query to AI endpoint...');
 
       // Send to AI endpoint
-      const response = await fetch('http://10.170.100.212:5000/receive', {
+      const response = await fetch('http://10.155.92.27:5000/receive', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -11,6 +11,7 @@ import '../utils/user_preferences.dart';
 import '../config/env_config.dart';
 import 'leaderboard.dart';
 import 'statistics_detail_page.dart';
+import 'ongoing_complaints_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -162,16 +163,11 @@ class _HomePageState extends State<HomePage> {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
+                      // Navigate to the new OngoingComplaintsPage
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => StatisticsDetailPage(
-                            title: 'Ongoing Requests',
-                            count: ongoingRequests.toString(),
-                            icon: Icons.access_time,
-                            backgroundColor: const Color(0xFFFF9800),
-                            type: 'ongoing',
-                          ),
+                          builder: (context) => const OngoingComplaintsPage(),
                         ),
                       );
                     },
