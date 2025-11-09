@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../config/env_config.dart';
+import '../utils/user_preferences.dart';
 
 class StatisticsDetailPage extends StatefulWidget {
   final String title;
@@ -21,75 +25,118 @@ class StatisticsDetailPage extends StatefulWidget {
 }
 
 class _StatisticsDetailPageState extends State<StatisticsDetailPage> {
-  bool _isLoading = false;
+  bool _isLoading = true;
+  List<RequestItem> _filteredRequests = [];
 
-  // Mock data - Replace with actual API call based on type
-  List<RequestItem> _getRequestItems() {
-    switch (widget.type) {
-      case 'total':
-        return List.generate(
-          8,
-          (index) => RequestItem(
-            id: 'REQ${1000 + index}',
-            title: 'Request ${index + 1}',
-            description: 'Description for request ${index + 1}',
-            status: index % 3 == 0
-                ? 'Completed'
-                : index % 3 == 1
-                ? 'Ongoing'
-                : 'Pending',
-            date: DateTime.now().subtract(Duration(days: index)),
-            location: 'Location ${index + 1}',
+  @override
+  void initState() {
+    super.initState();
+    _fetchComplaints();
+  }
+
+  Future<void> _fetchComplaints() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final aadhar = await UserPreferences.getAadharNumber();
+      if (aadhar == null) {
+        if (mounted) {
+          setState(() {
+            _filteredRequests = [];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse('${EnvConfig.apiBaseUrl}/getComplaintsByAadhar'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'aadhar': aadhar}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final complaints = data['complaints'] ?? [];
+
+        List<RequestItem> allItems = [];
+        for (final complaint in complaints) {
+          final title = complaint['issueTitle']?.toString().trim();
+          allItems.add(
+            RequestItem(
+              id: complaint['id']?.toString() ?? 'N/A',
+              title: (title != null && title.isNotEmpty)
+                  ? title
+                  : 'Untitled Request',
+              description: complaint['description'] ?? 'No description',
+              status: complaint['status'] ?? 'PENDING',
+              date: complaint['createdAt'] != null
+                  ? DateTime.parse(complaint['createdAt'])
+                  : DateTime.now(),
+              location: complaint['address'] ?? 'Unknown location',
+            ),
+          );
+        }
+
+        if (mounted) {
+          setState(() {
+            _filteredRequests = _filterRequestsByType(allItems);
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _filteredRequests = [];
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _filteredRequests = [];
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error fetching complaints: $e'),
+            backgroundColor: Colors.red,
           ),
         );
-      case 'ongoing':
-        return List.generate(
-          2,
-          (index) => RequestItem(
-            id: 'REQ${2000 + index}',
-            title: 'Ongoing Request ${index + 1}',
-            description: 'Description for ongoing request ${index + 1}',
-            status: 'Ongoing',
-            date: DateTime.now().subtract(Duration(days: index)),
-            location: 'Location ${index + 1}',
-          ),
-        );
-      case 'pending':
-        return List.generate(
-          3,
-          (index) => RequestItem(
-            id: 'REQ${3000 + index}',
-            title: 'Pending Request ${index + 1}',
-            description: 'Description for pending request ${index + 1}',
-            status: 'Pending',
-            date: DateTime.now().subtract(Duration(days: index)),
-            location: 'Location ${index + 1}',
-          ),
-        );
-      case 'completed':
-        return List.generate(
-          3,
-          (index) => RequestItem(
-            id: 'REQ${4000 + index}',
-            title: 'Completed Request ${index + 1}',
-            description: 'Description for completed request ${index + 1}',
-            status: 'Complete',
-            date: DateTime.now().subtract(Duration(days: index + 5)),
-            location: 'Location ${index + 1}',
-          ),
-        );
-      default:
-        return [];
+      }
     }
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'completed':
-        return const Color(0xFFAB47BC);
+  List<RequestItem> _filterRequestsByType(List<RequestItem> items) {
+    switch (widget.type) {
+      case 'total':
+        return items;
       case 'ongoing':
-        return const Color(0xFFFF9800);
+        return items.where((item) => item.status == 'ONGOING').toList();
       case 'pending':
+        return items.where((item) => item.status == 'PENDING').toList();
+      case 'completed':
+        return items.where((item) => item.status == 'COMPLETED').toList();
+      default:
+        return items;
+    }
+  }
+
+  // Mock data - Replace with actual API call based on type
+  List<RequestItem> _getRequestItems() {
+    return _filteredRequests;
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'COMPLETED':
+        return const Color(0xFFAB47BC);
+      case 'ONGOING':
+        return const Color(0xFFFF9800);
+      case 'PENDING':
         return const Color(0xFF66BB6A);
       default:
         return Colors.grey;
@@ -219,18 +266,7 @@ class _StatisticsDetailPageState extends State<StatisticsDetailPage> {
                     ),
                   )
                 : RefreshIndicator(
-                    onRefresh: () async {
-                      setState(() {
-                        _isLoading = true;
-                      });
-                      // Simulate API call
-                      await Future.delayed(const Duration(seconds: 1));
-                      if (mounted) {
-                        setState(() {
-                          _isLoading = false;
-                        });
-                      }
-                    },
+                    onRefresh: _fetchComplaints,
                     child: ListView.builder(
                       padding: const EdgeInsets.all(16.0),
                       itemCount: items.length,

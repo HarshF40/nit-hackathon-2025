@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:http/http.dart' as http;
 import '../services/location_service.dart';
 import '../components/complaint_info_dialog.dart';
@@ -51,20 +52,69 @@ class _FullMapPageState extends State<FullMapPage> {
 
   Future<void> _fetchComplaintsByRadius() async {
     if (_currentLocation == null) return;
-    final response = await http.post(
-      Uri.parse('${EnvConfig.apiBaseUrl}/getComplaintsByRadius'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'latitude': _currentLocation!.latitude,
-        'longitude': _currentLocation!.longitude,
-        'radiusKm': _geofenceRadius,
-      }),
-    );
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      setState(() {
-        _complaints = List<Map<String, dynamic>>.from(data['complaints'] ?? []);
-      });
+
+    try {
+      final response = await http.post(
+        Uri.parse('${EnvConfig.apiBaseUrl}/getComplaintsByRadius'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'latitude': _currentLocation!.latitude,
+          'longitude': _currentLocation!.longitude,
+          'radiusKm': _geofenceRadius,
+        }),
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final complaints = List<Map<String, dynamic>>.from(
+          data['complaints'] ?? [],
+        );
+        print('========================================');
+        print('Fetched ${complaints.length} complaints from backend');
+        print('Geofence radius: $_geofenceRadius km');
+        print(
+          'Current location: ${_currentLocation!.latitude}, ${_currentLocation!.longitude}',
+        );
+        print('========================================');
+
+        // Log each complaint details
+        for (var complaint in complaints) {
+          print(
+            'Complaint ${complaint['id']}: ${complaint['issueTitle'] ?? complaint['title']}',
+          );
+          print('  Location: ${complaint['location']}');
+          print('  Department: ${complaint['departmentType']}');
+        }
+        print('========================================');
+
+        if (mounted) {
+          setState(() {
+            _complaints = complaints;
+          });
+        }
+      } else {
+        print('Error: ${response.statusCode} - ${response.body}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to fetch complaints: ${response.statusCode}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Exception fetching complaints: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -86,6 +136,27 @@ class _FullMapPageState extends State<FullMapPage> {
       _currentLocation ?? LatLng(18.5204, 73.8567),
       _currentZoom,
     );
+  }
+
+  // Calculate distance between two points using Haversine formula (in km)
+  double _calculateDistance(LatLng point1, LatLng point2) {
+    const double earthRadius = 6371; // Earth's radius in kilometers
+
+    final double lat1 = point1.latitude * (math.pi / 180);
+    final double lat2 = point2.latitude * (math.pi / 180);
+    final double dLat = (point2.latitude - point1.latitude) * (math.pi / 180);
+    final double dLon = (point2.longitude - point1.longitude) * (math.pi / 180);
+
+    final double a =
+        math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1) *
+            math.cos(lat2) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+
+    final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+
+    return earthRadius * c;
   }
 
   void _showComplaintInfoFromMap(Map<String, dynamic> complaint) {
@@ -165,72 +236,146 @@ class _FullMapPageState extends State<FullMapPage> {
                         ),
                       ),
                     // Complaint markers from backend
-                    ..._complaints
-                        .map((c) {
-                          // Decode location if it's a string
-                          final locRaw = c['location'];
-                          final loc = (locRaw is String)
-                              ? jsonDecode(locRaw)
-                              : locRaw;
-                          final latitude =
-                              double.tryParse(loc['latitude'].toString()) ??
-                              0.0;
-                          final longitude =
-                              double.tryParse(loc['longitude'].toString()) ??
-                              0.0;
-                          IconData icon = Icons.report_problem;
-                          Color color = Colors.red;
-                          switch (c['departmentType']) {
-                            case 'ELEC':
-                              icon = Icons.electric_bolt;
-                              color = Colors.yellow[700]!;
-                              break;
-                            case 'GARB':
-                              icon = Icons.delete;
-                              color = Colors.green[700]!;
-                              break;
-                            case 'ROAD':
-                              icon = Icons.traffic;
-                              color = Colors.grey[700]!;
-                              break;
-                            case 'WATER':
-                              icon = Icons.water_drop;
-                              color = Colors.blue[700]!;
-                              break;
-                          }
-                          return Marker(
-                            point: LatLng(latitude, longitude),
-                            width: 40,
-                            height: 40,
-                            child: GestureDetector(
-                              onTap: () => _showComplaintInfoFromMap(c),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 3,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.3),
-                                      blurRadius: 6,
-                                      spreadRadius: 1,
+                    ...() {
+                      print('========================================');
+                      print('MARKER CREATION SUMMARY:');
+                      int totalComplaints = _complaints.length;
+                      int markersCreated = 0;
+                      int filteredOut = 0;
+
+                      final markers = _complaints
+                          .map((c) {
+                            try {
+                              // Decode location if it's a string
+                              final locRaw = c['location'];
+                              if (locRaw == null) {
+                                print(
+                                  '❌ Complaint ${c['id']}: No location data',
+                                );
+                                filteredOut++;
+                                return null;
+                              }
+
+                              final loc = (locRaw is String)
+                                  ? jsonDecode(locRaw)
+                                  : locRaw;
+
+                              if (loc['latitude'] == null ||
+                                  loc['longitude'] == null) {
+                                print(
+                                  '❌ Complaint ${c['id']}: Invalid location format - $loc',
+                                );
+                                filteredOut++;
+                                return null;
+                              }
+
+                              final latitude = double.tryParse(
+                                loc['latitude'].toString(),
+                              );
+                              final longitude = double.tryParse(
+                                loc['longitude'].toString(),
+                              );
+
+                              if (latitude == null ||
+                                  longitude == null ||
+                                  latitude == 0.0 ||
+                                  longitude == 0.0) {
+                                print(
+                                  '❌ Complaint ${c['id']}: Invalid coordinates - lat=$latitude, lng=$longitude',
+                                );
+                                filteredOut++;
+                                return null;
+                              }
+
+                              // Check if marker is within geofence radius
+                              final markerLocation = LatLng(
+                                latitude,
+                                longitude,
+                              );
+                              final distance = _calculateDistance(
+                                _currentLocation!,
+                                markerLocation,
+                              );
+
+                              if (distance > _geofenceRadius) {
+                                print(
+                                  '❌ Complaint ${c['id']}: Outside geofence - ${distance.toStringAsFixed(2)} km > ${_geofenceRadius} km',
+                                );
+                                filteredOut++;
+                                return null;
+                              }
+
+                              markersCreated++;
+                              print(
+                                '✅ Complaint ${c['id']}: Marker created at ($latitude, $longitude) - ${distance.toStringAsFixed(2)} km away',
+                              );
+
+                              IconData icon = Icons.report_problem;
+                              Color color = Colors.red;
+                              switch (c['departmentType']) {
+                                case 'ELEC':
+                                  icon = Icons.electric_bolt;
+                                  color = Colors.yellow[700]!;
+                                  break;
+                                case 'GARB':
+                                  icon = Icons.delete;
+                                  color = Colors.green[700]!;
+                                  break;
+                                case 'ROAD':
+                                  icon = Icons.traffic;
+                                  color = Colors.grey[700]!;
+                                  break;
+                                case 'WATER':
+                                  icon = Icons.water_drop;
+                                  color = Colors.blue[700]!;
+                                  break;
+                              }
+                              return Marker(
+                                point: LatLng(latitude, longitude),
+                                width: 40,
+                                height: 40,
+                                child: GestureDetector(
+                                  onTap: () => _showComplaintInfoFromMap(c),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          blurRadius: 6,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                    child: Icon(
+                                      icon,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
                                 ),
-                                child: Icon(
-                                  icon,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          );
-                        })
-                        .whereType<Marker>()
-                        .toList(),
+                              );
+                            } catch (e) {
+                              print('❌ Complaint ${c['id']}: Error - $e');
+                              filteredOut++;
+                              return null;
+                            }
+                          })
+                          .whereType<Marker>()
+                          .toList();
+
+                      print('Total complaints: $totalComplaints');
+                      print('Markers created: $markersCreated');
+                      print('Filtered out: $filteredOut');
+                      print('========================================');
+
+                      return markers;
+                    }(),
                   ],
                 ),
               ],
