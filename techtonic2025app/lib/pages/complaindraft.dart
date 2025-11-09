@@ -181,6 +181,7 @@ Respond ONLY with the JSON object above, nothing else.
                               if (response.statusCode == 200) {
                                 final data = jsonDecode(response.body);
                                 final summary = data['summary'];
+                                print('🔍 AI Response summary: $summary');
                                 if (mounted) {
                                   setState(() {
                                     if (summary['issueTitle'] != null &&
@@ -189,6 +190,13 @@ Respond ONLY with the JSON object above, nothing else.
                                             .isNotEmpty) {
                                       _titleController.text =
                                           summary['issueTitle'];
+                                      print(
+                                        '✅ Title set to: ${summary['issueTitle']}',
+                                      );
+                                    } else {
+                                      print(
+                                        '⚠️ issueTitle is null or empty in AI response',
+                                      );
                                     }
                                     if (summary['category'] != null)
                                       _selectedCategory = summary['category'];
